@@ -25,7 +25,7 @@ Interviews are always saved in the browser first (localStorage), so the form wor
 
 Without a shared database, you move data between devices by hand: **Interviews → Export (JSON)** on one device, then **Import (JSON)** on the other.
 
-Exports contain personal data. Do not commit them (the  already excludes the default file names).
+Exports contain personal data. Do not commit them (the `.gitignore` already excludes the default file names).
 
 ## Shared database
 
@@ -34,13 +34,13 @@ With a Supabase project configured, every signed-in team member sees the same in
 Setup, once:
 
 1. Create a free project at supabase.com.
-2. In **SQL Editor**, paste and run . It creates the  table and allows access to signed-in users only.
+2. In **SQL Editor**, paste and run `supabase-setup.sql`. It creates the `interviews` table and allows access to signed-in users only.
 3. In **Authentication → Sign In / Providers**, turn **off** "Allow new users to sign up". This matters: the site is public, and with sign-ups open anyone could create an account and read the interviews.
 4. In **Authentication → Users**, add one user per team member (email + password, auto-confirmed).
-5. In **Project Settings → API**, copy the Project URL and the  (publishable) key into , then commit and push. Never use the  key.
+5. In **Project Settings → API**, copy the Project URL and the `anon` (publishable) key into `config.js`, then commit and push. Never use the `service_role` key.
 
 Then each member opens the site, taps **☁ Connexion** in the top bar and signs in once per device.
 
 ## Editing the questions
 
-Everything is in `data.js`: questions, profiles, hypotheses, pitch texts and the pricing table. Each text is `[French, English]`. The guides are kept short on purpose; `data.js` also holds reserve questions that you can add to a profile by putting their id in its list.
+Everything is in `data.js`: questions, profiles, hypotheses and the pricing table. Each text is `[French, English]`. The guides are kept short on purpose; `data.js` also holds reserve questions that you can add to a profile by putting their id in its list.
