@@ -1,0 +1,3 @@
+# Interview exports contain personal data: never commit them.
+soc-interviews-*.json
+soc-interviews-*.csv
