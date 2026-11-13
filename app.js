@@ -37,9 +37,6 @@
     rules: ["Règles d'or de l'entretien", "Golden rules of interviewing"],
     who: ["Qui", "Who"], goal: ["Objectif", "Goal"],
     intro: ["Introduction à lire", "Introduction to read out"],
-    pitch: ["Présentez maintenant le projet (30 secondes)", "Now pitch the project (30 seconds)"],
-    pitch_warn: ["Pas avant ce point : les réponses précédentes doivent rester spontanées.", "Not before this point: earlier answers must stay spontaneous."],
-    open_sim: ["Ouvrir le simulateur de prix", "Open the price simulator"],
     meta: ["Fiche de l'interlocuteur", "Interviewee details"],
     m_name: ["Nom", "Name"], m_role: ["Fonction", "Job title"], m_company: ["Organisation", "Organisation"], m_sector: ["Secteur", "Sector"],
     m_size: ["Nombre d'utilisateurs", "Number of users"], m_wilaya: ["Wilaya", "Wilaya"], m_date: ["Date", "Date"], m_mode: ["Format", "Format"],
@@ -174,11 +171,9 @@
       ${readonly ? opts : inputHTML(q, a) + (q.type === "text" ? "" : `<textarea data-note rows="1" placeholder="${t("notes")}" aria-label="${t("notes")}">${esc(a.n)}</textarea>`)}
     </div>`;
   }
-  const pitchHTML = s => `<aside class="pitch"><h3>📣 ${t("pitch")}</h3><p class="warn">${t("pitch_warn")}</p><blockquote>${L(s.pitch)}</blockquote>
-    ${s.sim ? `<a class="btn ghost sm noprint" href="#/pricing" target="_blank" rel="noopener">${t("open_sim")} ↗</a>` : ""}</aside>`;
   function sectionsHTML(p, iv) {
     let n = 0;
-    return p.sections.map((s, i) => s.pitch ? pitchHTML(s) : `<section class="sec card" id="sec${i}"><h2>${L(s.t)}</h2>
+    return p.sections.map((s, i) => `<section class="sec card" id="sec${i}"><h2>${L(s.t)}</h2>
       ${s.note ? `<p class="muted">${L(s.note)}</p>` : ""}
       ${s.qs.map(id => qHTML(Q[id], iv ? (iv.answers[id] || {}) : {}, ++n, !iv)).join("")}</section>`).join("");
   }
@@ -201,7 +196,7 @@
     const meta = META.map(([k, ty]) => `<label>${t("m_" + k)}${ty === "select"
       ? `<select data-meta="${k}">${UI.mode_o.map((o, i) => `<option value="${i}"${String(iv.meta[k]) === String(i) ? " selected" : ""}>${L(o)}</option>`).join("")}</select>`
       : `<input type="${ty}" data-meta="${k}" value="${esc(iv.meta[k])}"${ty === "number" ? ' min="1" inputmode="numeric"' : ""}>`}</label>`).join("");
-    const secNav = p.sections.map((s, i) => s.pitch ? `<button class="chip pitchchip" data-act="scroll" data-id="pitch">📣</button>` : `<button class="chip" data-act="scroll" data-id="sec${i}">${L(s.t)}</button>`).join("");
+    const secNav = p.sections.map((s, i) => `<button class="chip" data-act="scroll" data-id="sec${i}">${L(s.t)}</button>`).join("");
     return `<div class="bar noprint" id="bar">
         <div class="bar-l"><b id="who">${esc(who(iv))}</b><span class="muted">${p.icon} ${L(p.n)}</span></div>
         <div class="bar-r"><button class="btn ghost sm" data-act="timer" id="timer" aria-label="Timer">⏱ 00:00</button>
@@ -211,7 +206,7 @@
       </div>
       <div class="iv" id="iv">
       <details class="card meta"><summary>${t("meta")}</summary><div class="form">${meta}</div></details>
-      ${consentHTML(p)}${sectionsHTML(p, iv).replace('<aside class="pitch">', '<aside class="pitch" id="pitch">')}
+      ${consentHTML(p)}${sectionsHTML(p, iv)}
       <div class="row end noprint"><button class="btn" data-act="finish">${t("finish")} ✓</button></div></div>`;
   }
   function updateProgress() {

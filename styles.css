@@ -102,9 +102,6 @@ textarea { resize: vertical; min-height: 42px; }
 .other[hidden] { display: none; }
 .others { margin: 4px 0 0; padding-left: 18px; font-size: .85rem; color: var(--muted); overflow-wrap: anywhere; }
 .num { display: flex; align-items: center; gap: 8px; max-width: 260px; }
-.pitch { padding: 16px; border-radius: var(--radius); border: 2px dashed var(--brand); background: var(--soft); display: grid; gap: 8px; justify-items: start; }
-.pitch .warn { color: var(--warn); font-size: .9rem; }
-.pitch blockquote { margin: 0; padding-left: 12px; border-left: 3px solid var(--brand); }
 
 /* report */
 .metalist { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin: 0; }
@@ -168,7 +165,7 @@ textarea { resize: vertical; min-height: 42px; }
   .noprint, .top { display: none !important; }
   body { background: #fff; color: #000; font-size: 12px; }
   main { max-width: none; padding: 0; }
-  .card, .pitch { border-color: #bbb; break-inside: avoid; }
+  .card { border-color: #bbb; break-inside: avoid; }
   .sec { break-inside: auto; }
   .q, .ra { break-inside: avoid; }
   textarea { border: 1px solid #bbb; }
