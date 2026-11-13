@@ -38,8 +38,6 @@
     { h: ["Audit, pentest, intégrateur, SOC. Étiez-vous satisfait ? Pourquoi avoir arrêté ou continué ?", "Audit, pentest, integrator, SOC. Were you satisfied? Why did you stop or continue?"] });
   q("s_soc_considered", "single", "seg", "Avez-vous déjà envisagé une surveillance continue (SOC) ?", "Have you ever considered continuous monitoring (a SOC)?",
     { key: 1, o: [["Je ne connaissais pas", "Never heard of it"], ["Connu, jamais envisagé", "Known, never considered"], ["Envisagé puis abandonné", "Considered then dropped"], ["Devis demandé", "Asked for a quote"], ["Déjà abonné / en place", "Already subscribed / in place"]] });
-  q("s_soc_blockers", "multi", "risk", "Qu'est-ce qui vous a freiné ou vous freinerait ?", "What held you back, or would hold you back?",
-    { key: 1, hyp: "H3", sup: v => v.some(i => i <= 2), o: [["Prix trop élevé", "Price too high"], ["Prix non publiés (sur devis)", "No public prices (quote only)"], ["Réservé aux banques / grands comptes", "Only for banks / large accounts"], ["Pas de besoin ressenti", "No perceived need"], ["Manque de confiance dans le prestataire", "Lack of trust in the provider"], ["Données hébergées à l'étranger", "Data hosted abroad"], ["Paiement en devises", "Payment in foreign currency"], ["Trop complexe à mettre en place", "Too complex to set up"], ["Engagement trop long", "Commitment too long"]] });
 
   /* ---------- Requirements ---------- */
   q("r_hosting", "scale", "vp", "Quelle importance a pour vous l'hébergement de vos données de sécurité en Algérie ?", "How important is it that your security data stays hosted in Algeria?",
@@ -61,8 +59,6 @@
   /* ---------- Offer reaction (after the pitch) ---------- */
   q("o_reaction", "scale", "vp", "Après présentation : quel est votre intérêt pour cette offre ?", "After the pitch: how interested are you in this offer?",
     { key: 1, h: ["1 = aucun · 5 = je veux commencer. Notez la première réaction spontanée, mot pour mot.", "1 = none · 5 = I want to start. Write down the first spontaneous reaction, word for word."] });
-  q("o_services", "multi", "vp", "Quels services vous intéressent le plus ?", "Which services interest you most?",
-    { key: 1, o: [["Surveillance de base (SIEM + EDR + alertes)", "Core monitoring (SIEM + EDR + alerts)"], ["Analystes 24/7", "24/7 analysts"], ["Réponse active (isoler, bloquer)", "Active response (isolate, block)"], ["Threat hunting", "Threat hunting"], ["Heures de réponse à incident", "Incident response hours"], ["Surveillance dark web / fuites .dz", "Dark web / .dz leak monitoring"], ["Rapports de conformité algériens", "Algerian compliance reports"], ["Analyste dédié nommé", "Dedicated named analyst"], ["Surveillance du site web", "Website monitoring"], ["Fraude e-paiement (CIB/Edahabia)", "E-payment fraud (CIB/Edahabia)"], ["Simulation de phishing + formation", "Phishing simulation + training"], ["Test de préparation ransomware", "Ransomware readiness check"], ["Pentest léger", "Light pentest"]] });
   q("o_price_fair", "single", "rev", "Le prix calculé pour votre taille vous semble :", "The price computed for your size seems:",
     { noOther: 1, key: 1, hyp: "H7", sup: v => v === 1 || v === 2, h: ["Montrez d'abord le simulateur avec leur nombre d'utilisateurs. Notez ensuite le budget mensuel qu'ils jugeraient acceptable.", "Show the simulator with their number of users first. Then note the monthly budget they would find acceptable."],
       o: [["Tellement bas que je doute de la qualité", "So low I doubt the quality"], ["Une bonne affaire", "A good deal"], ["Correct", "Fair"], ["Cher, à réfléchir", "Expensive, needs thought"], ["Trop cher, hors de question", "Too expensive, out of the question"]] });
@@ -72,8 +68,6 @@
     { o: [["Par utilisateur, services à la carte", "Per user, services à la carte"], ["Packs fixes (Bronze / Argent / Or)", "Fixed packs (Bronze / Silver / Gold)"], ["Forfait annuel négocié", "Negotiated yearly flat fee"], ["Sur devis", "On quote"]] });
   q("o_trust", "multi", "risk", "Qu'est-ce qui vous donnerait confiance dans un nouveau prestataire algérien ?", "What would make you trust a new Algerian provider?",
     { key: 1, o: [["Pilote gratuit de 30 jours", "Free 30-day pilot"], ["Références clients", "Customer references"], ["Certification ISO 27001", "ISO 27001 certification"], ["Agrément / reconnaissance officielle", "Official approval / recognition"], ["Partenariat universitaire", "University partnership"], ["Contrat avec SLA et pénalités", "Contract with SLA and penalties"], ["Visite du SOC", "Visiting the SOC"], ["Accord de confidentialité (NDA)", "Non-disclosure agreement"]] });
-  q("o_pilot", "yn", "ch", "Accepteriez-vous un pilote gratuit de 30 jours dans les prochains mois ?", "Would you accept a free 30-day pilot in the coming months?",
-    { key: 1, hyp: "H8", sup: v => v === "y", h: ["Un vrai oui = une date ou un contact technique. Sinon, notez « oui poli ».", "A real yes = a date or a technical contact. Otherwise write « polite yes »."] });
   q("o_decider", "text", "ch", "Qui décide de ce type d'achat et comment se passe le processus ?", "Who decides on this kind of purchase, and what is the process?",
     { h: ["Signataire, délais, consultation ou appel d'offres, période budgétaire.", "Signatory, lead time, tender or consultation, budget period."] });
   q("o_channels", "multi", "ch", "Comment trouvez-vous habituellement vos prestataires informatiques ?", "How do you usually find your IT providers?",
@@ -89,8 +83,6 @@
   q("t_time", "text", "vp", "Combien de temps par semaine consacrez-vous à la sécurité, et à quoi ?", "How much time per week do you spend on security, and on what?",
     { h: ["Que voudriez-vous ne plus avoir à faire ?", "What would you like to stop having to do?"] });
   q("t_backup", "yn", "vp", "Avez-vous testé une restauration complète de vos sauvegardes cette année ?", "Have you tested a full restore of your backups this year?");
-  q("t_agent", "scale", "risk", "Seriez-vous à l'aise pour installer un agent sur vos postes et serveurs ?", "How comfortable are you installing an agent on your endpoints and servers?",
-    { key: 1, h: ["1 = refus · 5 = aucun problème. Quelles craintes : performance, confidentialité, droits admin ?", "1 = refusal · 5 = no problem. Which fears: performance, privacy, admin rights?"] });
   q("t_active", "single", "vp", "Accepteriez-vous que le SOC isole un poste infecté à votre place ?", "Would you let the SOC isolate an infected host for you?",
     { o: [["Oui, automatiquement", "Yes, automatically"], ["Oui, après ma validation (un clic sur WhatsApp)", "Yes, after my approval (one tap on WhatsApp)"], ["Seulement hors heures de travail", "Only outside working hours"], ["Non, jamais", "No, never"]] });
   q("t_concerns", "text", "risk", "Quelles seraient vos conditions ou inquiétudes pour envoyer vos logs à un prestataire ?", "What conditions or worries would you have about sending your logs to a provider?",
@@ -103,8 +95,6 @@
     { h: ["Quels rapports devez-vous produire ? Combien de temps cela prend-il ?", "Which reports must you produce? How long does it take?"] });
   q("g_requirements", "multi", "risk", "Quelles conditions un prestataire SOC doit-il remplir pour travailler avec vous ?", "What must a SOC provider meet to work with you?",
     { key: 1, o: [["Hébergement 100 % en Algérie", "100% hosting in Algeria"], ["ISO 27001", "ISO 27001"], ["Agrément / homologation officielle", "Official approval / accreditation"], ["Références dans le secteur", "References in the sector"], ["SLA avec pénalités", "SLA with penalties"], ["Habilitation du personnel", "Staff vetting"], ["Audit du prestataire par nos équipes", "Provider audit by our teams"], ["Ancienneté de l'entreprise", "Company track record"]] });
-  q("g_hybrid", "single", "vp", "Quel modèle vous intéresserait le plus ?", "Which model would interest you most?",
-    { noOther: 1, o: [["SOC entièrement externalisé", "Fully outsourced SOC"], ["SOC co-géré (renfort nuit / week-end)", "Co-managed SOC (night / weekend cover)"], ["Services ponctuels (hunting, réponse à incident)", "One-off services (hunting, incident response)"], ["Flux de renseignement local uniquement", "Local threat feed only"], ["Aucun", "None"]] });
   q("g_ti", "scale", "vp", "Quelle valeur aurait pour vous un flux de menaces local (.dz, CIB/Edahabia, BaridiMob) ?", "How valuable would a local threat feed (.dz, CIB/Edahabia, BaridiMob) be to you?",
     { h: ["1 = aucune · 5 = très forte. Quelles sources utilisent-ils aujourd'hui ?", "1 = none · 5 = very high. Which sources do they use today?"] });
 
@@ -118,8 +108,6 @@
   q("x_bg", "text", "par", "Quel est votre parcours et votre expérience des SOC ?", "What is your background and SOC experience?", { key: 1 });
   q("x_demand", "scale", "seg", "Selon vous, les PME algériennes sont-elles prêtes à payer pour un SOC ?", "In your view, are Algerian SMEs ready to pay for a SOC?",
     { h: ["1 = pas du tout · 5 = tout à fait. Quels secteurs en premier ?", "1 = not at all · 5 = definitely. Which sectors first?"] });
-  q("x_stack", "scale", "res", "La pile open source (Wazuh, Suricata, MISP, TheHive, Shuffle) est-elle crédible en production ?", "Is the open-source stack (Wazuh, Suricata, MISP, TheHive, Shuffle) credible in production?",
-    { h: ["1 = non · 5 = oui. Que remplaceriez-vous, et par quoi ?", "1 = no · 5 = yes. What would you replace, and with what?"] });
   q("x_diff", "multi", "vp", "Lesquels de nos différenciateurs ont le plus de valeur ?", "Which of our differentiators are the most valuable?",
     { o: [["Prix publics en DA", "Public prices in DA"], ["Hébergement 100 % algérien", "100% Algerian hosting"], ["Rapports en arabe et français", "Reports in Arabic and French"], ["Flux de menaces local .dz", "Local .dz threat feed"], ["Alertes WhatsApp / Telegram / SMS", "WhatsApp / Telegram / SMS alerts"], ["Assistant IA arabe / français", "Arabic / French AI assistant"], ["Rapports de conformité algériens", "Algerian compliance reports"], ["Services à la carte dès 10 utilisateurs", "À la carte services from 10 users"], ["Score de sécurité sur 100", "Security score out of 100"]] });
   q("x_pricing", "single", "rev", "Nos prix (1 500 → 700 DA par utilisateur et par mois) vous semblent :", "Our prices (1,500 → 700 DA per user per month) seem:",
@@ -152,8 +140,6 @@
   q("i_fit", "scale", "par", "Notre projet correspond-il à ce que vous recherchez ?", "Does our project fit what you are looking for?",
     { key: 1, h: ["1 = pas du tout · 5 = tout à fait.", "1 = not at all · 5 = entirely."] });
   q("i_bmc", "text", "rev", "Que pensez-vous de notre modèle économique (abonnement mensuel par utilisateur) ?", "What do you think of our business model (monthly per-user subscription)?");
-  q("i_funding", "text", "rev", "Quelles sources de financement recommandez-vous pour ce type de projet ?", "Which funding sources do you recommend for this kind of project?",
-    { h: ["Label startup / projet innovant, Algerian Startup Fund, concours, subventions.", "Startup / innovative-project label, Algerian Startup Fund, competitions, grants."] });
   q("i_next", "text", "ch", "Quelles sont les prochaines étapes concrètes et les dates limites ?", "What are the concrete next steps and deadlines?", { key: 1 });
 
   /* ---------- Provider / integrator / partner ---------- */
@@ -162,11 +148,8 @@
     { o: [["Vente et intégration de matériel / licences", "Hardware / licence sales and integration"], ["Infogérance", "Managed IT"], ["Audit", "Audit"], ["Pentest", "Pentest"], ["Surveillance 24/7 / SOC", "24/7 monitoring / SOC"], ["Réponse à incident", "Incident response"], ["Formation / sensibilisation", "Training / awareness"], ["Hébergement / cloud", "Hosting / cloud"]] });
   q("m_demand", "yn", "seg", "Vos clients vous demandent-ils de la surveillance continue ?", "Do your customers ask you for continuous monitoring?",
     { key: 1, h: ["Quels clients ? À quelle fréquence ? Que leur répondez-vous ?", "Which customers? How often? What do you tell them?"] });
-  q("m_why", "text", "comp", "Pourquoi le SOC est-il si peu proposé aux PME en Algérie ?", "Why is SOC so rarely offered to SMEs in Algeria?");
   q("m_view", "scale", "vp", "Que pensez-vous de notre offre ?", "What do you think of our offer?",
     { h: ["1 = pas crédible · 5 = très pertinente.", "1 = not credible · 5 = very relevant."] });
-  q("m_partner", "single", "par", "Quel type de collaboration vous intéresserait ?", "Which type of collaboration would interest you?",
-    { noOther: 1, key: 1, o: [["Revendre notre service à vos clients", "Reselling our service to your customers"], ["Nous recommander contre commission", "Referring us for a commission"], ["Marque blanche", "White label"], ["Nous fournir hébergement / connectivité", "Providing us hosting / connectivity"], ["Aucune", "None"]] });
   q("m_terms", "text", "par", "Quelles conditions attendriez-vous d'un partenariat ?", "What terms would you expect from a partnership?",
     { h: ["Commission, exclusivité, support, formation de vos équipes.", "Commission, exclusivity, support, training your teams."] });
   q("m_hosting", "text", "cost", "Quelles options d'hébergement en Algérie recommandez-vous, et à quel coût ?", "Which hosting options in Algeria do you recommend, and at what cost?");
@@ -177,8 +160,6 @@
   q("l_hosting", "yn", "vp", "L'hébergement local est-il juridiquement obligatoire pour certains secteurs ?", "Is local hosting legally mandatory for some sectors?",
     { h: ["Lesquels ? Quel texte ?", "Which ones? Which text?"] });
   q("l_reports", "text", "vp", "Quels rapports de conformité les entreprises ont-elles le plus de mal à produire ?", "Which compliance reports do companies struggle most to produce?");
-  q("l_risk", "scale", "risk", "Quel niveau de risque réglementaire voyez-vous pour notre projet ?", "What level of regulatory risk do you see for our project?",
-    { h: ["1 = faible · 5 = bloquant.", "1 = low · 5 = blocking."] });
 
   /* ---------- Debrief (team only, right after the meeting) ---------- */
   q("d_takeaways", "text", "seg", "À retenir : 3 points et les citations exactes", "To remember: 3 points and the exact quotes", { key: 1 });
@@ -210,8 +191,6 @@
     { o: [["3 à 4", "3 to 4"], ["5 à 6", "5 to 6"], ["7 à 8", "7 to 8"], ["9 ou plus", "9 or more"], ["Commencer en heures ouvrées + astreinte", "Start with business hours + on-call"]] });
   q("x_pitfalls", "multi", "risk", "Quelles erreurs voyez-vous le plus souvent dans les projets de SOC ?", "Which mistakes do you see most often in SOC projects?",
     { o: [["Trop d'alertes, fatigue des analystes", "Too many alerts, analyst fatigue"], ["Intégration des clients sous-estimée", "Client onboarding underestimated"], ["Vouloir tout faire dès le début", "Trying to do everything from day one"], ["Pas de procédures (playbooks)", "No procedures (playbooks)"], ["Turnover des analystes", "Analyst turnover"], ["Stockage des logs sous-estimé", "Log storage underestimated"], ["Mauvaise isolation entre clients", "Poor isolation between clients"], ["SLA impossibles à tenir", "SLAs that cannot be met"]] });
-  q("x_mvp", "single", "act", "À notre place, par quoi commenceriez-vous ?", "In our place, what would you start with?",
-    { o: [["Surveillance de base (SIEM + EDR)", "Core monitoring (SIEM + EDR)"], ["Surveillance de sites web", "Website monitoring"], ["Flux de menaces local .dz", "Local .dz threat feed"], ["Réponse à incident à la demande", "On-demand incident response"], ["Rapports de conformité", "Compliance reports"], ["Un pilote chez 2 ou 3 clients", "A pilot with 2 or 3 clients"]] });
   q("a_review", "multi", "risk", "Qu'est-ce qui vous paraît le plus fragile dans le projet ?", "What seems most fragile in the project?",
     { o: [["Périmètre trop large", "Scope too wide"], ["Tenir le 24/7 avec peu d'analystes", "Staffing 24/7 with few analysts"], ["Gagner la confiance des clients", "Earning customer trust"], ["Réglementation", "Regulation"], ["Rentabilité à ces prix", "Profitability at these prices"], ["Plateforme multi-clients", "Multi-tenant platform"], ["Rien de majeur", "Nothing major"]] });
   q("a_salary", "single", "cost", "Quel salaire mensuel net attendriez-vous pour un poste d'analyste N1 ?", "What net monthly salary would you expect as an L1 analyst?",
@@ -222,104 +201,115 @@
     { o: [["L'équipe", "The team"], ["L'innovation", "Innovation"], ["La taille du marché", "Market size"], ["Un prototype qui fonctionne", "A working prototype"], ["Des premiers clients", "First customers"], ["Le modèle économique", "The business model"], ["L'impact national", "National impact"], ["Le label startup", "The startup label"]] });
   q("i_weak", "multi", "risk", "Quels sont les points faibles de notre dossier aujourd'hui ?", "What are the weak points of our application today?",
     { o: [["Pas de prototype", "No prototype"], ["Pas de preuve de marché", "No market proof"], ["Équipe sans profil commercial", "Team without a business profile"], ["Modèle économique fragile", "Fragile business model"], ["Risque réglementaire", "Regulatory risk"], ["Concurrence", "Competition"], ["Besoin de financement élevé", "High funding need"], ["Rien de majeur", "Nothing major"]] });
-  q("i_proof", "multi", "seg", "Quelles preuves attendez-vous avant de nous accepter ?", "Which proof do you expect before accepting us?",
-    { o: [["Des entretiens clients", "Customer interviews"], ["Des lettres d'intention", "Letters of intent"], ["Un pilote en cours", "A running pilot"], ["Un prototype ou une démo", "A prototype or demo"], ["Un premier client payant", "A first paying customer"], ["Une étude de marché chiffrée", "A market study with figures"]] });
   q("i_when", "single", "ch", "Quand a lieu votre prochaine sélection ?", "When is your next selection?",
     { o: [["Candidatures ouvertes en continu", "Applications open all year"], ["Dans moins de 3 mois", "Within 3 months"], ["Dans 3 à 6 mois", "In 3 to 6 months"], ["Pas de date prévue", "No date planned"]] });
   q("m_price", "single", "comp", "À quel prix mensuel un SOC pour PME se vend-il réellement sur le marché ?", "At what monthly price is an SME SOC actually sold on the market?",
     { noOther: 1, h: ["Notez la durée d'engagement et ce qui est inclus.", "Note the commitment length and what is included."],
       o: [["Moins de 50 000 DA", "Under 50,000 DA"], ["50 000 – 150 000 DA", "50,000 – 150,000 DA"], ["150 000 – 500 000 DA", "150,000 – 500,000 DA"], ["Plus de 500 000 DA", "Over 500,000 DA"], ["Ne sait pas / jamais vu", "Doesn't know / never seen one"]] });
-  q("l_1807", "multi", "risk", "Quelles obligations de la loi 18-07 s'appliqueraient à notre SOC ?", "Which Law 18-07 obligations would apply to our SOC?",
-    { o: [["Déclaration auprès de l'autorité", "Declaration to the authority"], ["Autorisation préalable", "Prior authorisation"], ["Contrat de sous-traitance avec chaque client", "Processing contract with each client"], ["Durée de conservation limitée", "Limited retention period"], ["Transfert à l'étranger encadré", "Restricted transfer abroad"], ["Notification des violations", "Breach notification"], ["Désigner un responsable", "Appointing a responsible person"]] });
-  q("l_auth", "multi", "risk", "Quelles démarches faut-il avant de commercialiser le service ?", "Which steps are needed before selling the service?",
-    { o: [["Registre de commerce avec l'activité adaptée", "Trade register with the right activity"], ["Agrément ou homologation de sécurité", "Security approval or accreditation"], ["Déclaration données personnelles", "Personal-data declaration"], ["Label startup", "Startup label"], ["Aucune démarche spécifique", "No specific step"], ["Ne sait pas", "Doesn't know"]] });
-  q("l_contract", "multi", "risk", "Que doit absolument contenir notre contrat client ?", "What must our customer contract absolutely contain?",
-    { o: [["Limitation de responsabilité", "Limitation of liability"], ["SLA", "SLA"], ["Confidentialité", "Confidentiality"], ["Clause de sous-traitance des données", "Data-processing clause"], ["Réversibilité et restitution des données", "Exit and data return"], ["Droit d'audit du client", "Customer audit right"], ["Assurance responsabilité civile", "Liability insurance"]] });
-  q("l_timeline", "single", "risk", "Combien de temps prévoir pour être en règle avant le premier client ?", "How long should we plan to be compliant before the first customer?",
-    { noOther: 1, o: [["Moins d'un mois", "Under a month"], ["1 à 3 mois", "1 to 3 months"], ["3 à 6 mois", "3 to 6 months"], ["Plus de 6 mois", "Over 6 months"]] });
   q("d_next", "multi", "ch", "Prochaines actions", "Next actions",
     { h: ["Notez qui s'en charge et pour quand.", "Note who does it and by when."],
       o: [["Envoyer un message de remerciement", "Send a thank-you message"], ["Envoyer la présentation", "Send the presentation"], ["Contacter la personne recommandée", "Contact the person they recommended"], ["Planifier un pilote", "Schedule a pilot"], ["Relancer plus tard", "Follow up later"], ["Aucune", "None"]] });
 
-  /* ---------- Pitches (two sentences, no more) ---------- */
-  const PITCH_CLIENT = [
-    "Nous préparons un service de surveillance de sécurité 24/7, hébergé en Algérie et assuré par des analystes algériens. L'abonnement est mensuel, en DA, à prix publics à partir de 15 000 DA, avec des alertes sur WhatsApp et des rapports en français ou en arabe.",
-    "We are preparing a 24/7 security monitoring service, hosted in Algeria and run by Algerian analysts. It is a monthly subscription in DA at public prices from 15,000 DA, with alerts on WhatsApp and reports in French or Arabic."];
-  const PITCH_REVIEW = [
-    "Notre projet de fin d'études : un SOC as a Service 24/7 hébergé en Algérie, vendu par abonnement mensuel en DA à prix publics, pour les entreprises de 10 à 250 utilisateurs. Il repose sur une pile open source (Wazuh, Suricata, MISP, TheHive, Shuffle) et un flux de menaces local .dz.",
-    "Our final-year project: a 24/7 SOC as a Service hosted in Algeria, sold by monthly subscription in DA at public prices, for companies with 10 to 250 users. It runs on an open-source stack (Wazuh, Suricata, MISP, TheHive, Shuffle) and a local .dz threat feed."];
+  /* ---------- Neutral market questions: the project is never presented ---------- */
+  q("s_soc_blockers", "multi", "risk", "Qu'est-ce qui vous freine pour confier la surveillance de votre sécurité à un prestataire ?", "What holds you back from handing security monitoring to a provider?",
+    { hyp: "H3", sup: v => v.some(i => i <= 2), o: [["Prix trop élevé", "Price too high"], ["Prix non publiés (sur devis)", "No public prices (quote only)"], ["Réservé aux banques / grands comptes", "Only for banks / large accounts"], ["Pas de besoin ressenti", "No perceived need"], ["Manque de confiance dans les prestataires", "Lack of trust in providers"], ["Données hébergées à l'étranger", "Data hosted abroad"], ["Paiement en devises", "Payment in foreign currency"], ["Trop complexe à mettre en place", "Too complex to set up"], ["Engagement trop long", "Commitment too long"]] });
+  q("o_services", "multi", "vp", "Quels services de sécurité vous seraient les plus utiles ?", "Which security services would be most useful to you?",
+    { o: [["Surveillance et alertes en continu", "Continuous monitoring and alerts"], ["Des analystes disponibles 24/7", "Analysts available 24/7"], ["Blocage automatique des attaques", "Automatic blocking of attacks"], ["Aide en cas d'incident", "Help during an incident"], ["Alerte si vos mots de passe ou données fuitent", "Alert if your passwords or data leak"], ["Rapports de conformité", "Compliance reports"], ["Surveillance du site web", "Website monitoring"], ["Détection de fraude e-paiement", "E-payment fraud detection"], ["Simulation de phishing et formation du personnel", "Phishing simulation and staff training"], ["Vérification des sauvegardes (ransomware)", "Backup check (ransomware)"], ["Test d'intrusion", "Penetration test"]] });
+  q("o_budget", "single", "rev", "Quel budget mensuel vous semblerait raisonnable pour une surveillance 24/7 de votre entreprise ?", "What monthly budget would seem reasonable for 24/7 monitoring of your company?",
+    { noOther: 1, hyp: "H7", sup: v => v >= 1 && v <= 4, h: ["Laissez-les donner un chiffre, puis cochez la tranche.", "Let them name a figure, then tick the range."],
+      o: [["Moins de 15 000 DA", "Under 15,000 DA"], ["15 000 – 50 000 DA", "15,000 – 50,000 DA"], ["50 000 – 150 000 DA", "50,000 – 150,000 DA"], ["150 000 – 500 000 DA", "150,000 – 500,000 DA"], ["Plus de 500 000 DA", "Over 500,000 DA"], ["Aucun budget pour cela", "No budget for this"], ["Ne sait pas", "Doesn't know"]] });
+  q("o_pilot", "yn", "ch", "Si un prestataire algérien vous proposait un essai gratuit de 30 jours, l'accepteriez-vous ?", "If an Algerian provider offered you a free 30-day trial, would you accept it?",
+    { hyp: "H8", sup: v => v === "y", h: ["Notez la raison, surtout si c'est non.", "Note the reason, especially if it is a no."] });
+  q("t_agent", "scale", "risk", "Seriez-vous à l'aise pour installer l'agent d'un prestataire sur vos postes et serveurs ?", "How comfortable would you be installing a provider's agent on your endpoints and servers?",
+    { h: ["1 = refus · 5 = aucun problème. Quelles craintes : performance, confidentialité, droits admin ?", "1 = refusal · 5 = no problem. Which fears: performance, privacy, admin rights?"] });
+  q("g_hybrid", "single", "vp", "Quel type d'aide externe vous serait le plus utile ?", "Which kind of outside help would be most useful to you?",
+    { o: [["SOC entièrement externalisé", "Fully outsourced SOC"], ["Renfort nuit et week-end", "Night and weekend cover"], ["Services ponctuels (hunting, réponse à incident)", "One-off services (hunting, incident response)"], ["Renseignement sur les menaces locales", "Local threat intelligence"], ["Aucune", "None"]] });
+  q("x_stack", "scale", "res", "Une pile open source (Wazuh, Suricata, MISP, TheHive) est-elle crédible pour un SOC en production ?", "Is an open-source stack (Wazuh, Suricata, MISP, TheHive) credible for a production SOC?",
+    { h: ["1 = non · 5 = oui. Que faudrait-il remplacer ?", "1 = no · 5 = yes. What would need replacing?"] });
+  q("x_price_real", "single", "rev", "Quel prix mensuel par utilisateur une PME algérienne accepterait-elle pour un SOC ?", "What monthly price per user would an Algerian SME accept for a SOC?",
+    { noOther: 1, o: [["Moins de 500 DA", "Under 500 DA"], ["500 – 1 000 DA", "500 – 1,000 DA"], ["1 000 – 2 000 DA", "1,000 – 2,000 DA"], ["Plus de 2 000 DA", "Over 2,000 DA"], ["Ne sait pas", "Doesn't know"]] });
+  q("x_mvp", "single", "act", "Par quel service un nouveau SOC algérien devrait-il commencer ?", "Which service should a new Algerian SOC start with?",
+    { o: [["Surveillance de base (SIEM + EDR)", "Core monitoring (SIEM + EDR)"], ["Surveillance de sites web", "Website monitoring"], ["Renseignement sur les menaces locales", "Local threat intelligence"], ["Réponse à incident à la demande", "On-demand incident response"], ["Rapports de conformité", "Compliance reports"]] });
+  q("i_cyber", "yn", "par", "Accompagnez-vous déjà des projets en cybersécurité ?", "Do you already support cybersecurity projects?");
+  q("i_proof", "multi", "seg", "Quelles preuves attendez-vous d'un projet avant de l'accepter ?", "Which proof do you expect from a project before accepting it?",
+    { o: [["Des entretiens clients", "Customer interviews"], ["Des lettres d'intention", "Letters of intent"], ["Un pilote en cours", "A running pilot"], ["Un prototype ou une démo", "A prototype or demo"], ["Un premier client payant", "A first paying customer"], ["Une étude de marché chiffrée", "A market study with figures"]] });
+  q("i_funding", "multi", "rev", "Quels financements recommandez-vous à une startup technologique qui débute ?", "Which funding do you recommend to an early-stage tech startup?",
+    { o: [["Label startup", "Startup label"], ["Algerian Startup Fund", "Algerian Startup Fund"], ["Concours et prix", "Competitions and prizes"], ["Programmes internationaux", "International programmes"], ["Business angels", "Business angels"], ["Fonds propres", "Own funds"]] });
+  q("m_why", "multi", "comp", "Pourquoi le SOC est-il si peu proposé aux PME en Algérie ?", "Why is SOC so rarely offered to SMEs in Algeria?",
+    { o: [["Pas de demande", "No demand"], ["Les clients ne veulent pas payer", "Customers will not pay"], ["Manque d'analystes", "Shortage of analysts"], ["Coût des outils", "Cost of tools"], ["Pas rentable sur les petits comptes", "Not profitable on small accounts"], ["Réglementation floue", "Unclear regulation"]] });
+  q("m_partner", "single", "par", "Avec un SOC algérien indépendant, quelle collaboration vous intéresserait ?", "With an independent Algerian SOC, which collaboration would interest you?",
+    { o: [["Revendre son service à vos clients", "Reselling its service to your customers"], ["Le recommander contre commission", "Referring it for a commission"], ["Marque blanche", "White label"], ["Lui fournir hébergement ou connectivité", "Providing it hosting or connectivity"], ["Aucune", "None"]] });
+  q("l_1807", "multi", "risk", "Quelles obligations de la loi 18-07 s'appliquent à un prestataire qui traite les logs de sécurité de ses clients ?", "Which Law 18-07 obligations apply to a provider processing its clients' security logs?",
+    { o: [["Déclaration auprès de l'autorité", "Declaration to the authority"], ["Autorisation préalable", "Prior authorisation"], ["Contrat de sous-traitance avec chaque client", "Processing contract with each client"], ["Durée de conservation limitée", "Limited retention period"], ["Transfert à l'étranger encadré", "Restricted transfer abroad"], ["Notification des violations", "Breach notification"], ["Désigner un responsable", "Appointing a responsible person"]] });
+  q("l_auth", "multi", "risk", "Quelles démarches faut-il avant de vendre un service de surveillance de sécurité ?", "Which steps are needed before selling a security monitoring service?",
+    { o: [["Registre de commerce avec l'activité adaptée", "Trade register with the right activity"], ["Agrément ou homologation de sécurité", "Security approval or accreditation"], ["Déclaration données personnelles", "Personal-data declaration"], ["Label startup", "Startup label"], ["Aucune démarche spécifique", "No specific step"], ["Ne sait pas", "Doesn't know"]] });
+  q("l_contract", "multi", "risk", "Que doit absolument contenir un contrat pour ce type de service ?", "What must a contract for this kind of service absolutely contain?",
+    { o: [["Limitation de responsabilité", "Limitation of liability"], ["SLA", "SLA"], ["Confidentialité", "Confidentiality"], ["Clause de sous-traitance des données", "Data-processing clause"], ["Réversibilité et restitution des données", "Exit and data return"], ["Droit d'audit du client", "Customer audit right"], ["Assurance responsabilité civile", "Liability insurance"]] });
+  q("l_risk", "scale", "risk", "Quel niveau de risque réglementaire voyez-vous pour un nouveau prestataire de ce type ?", "What level of regulatory risk do you see for a new provider of this kind?",
+    { h: ["1 = faible · 5 = bloquant.", "1 = low · 5 = blocking."] });
+  q("l_timeline", "single", "risk", "Combien de temps faut-il pour être en règle avant un premier client ?", "How long does it take to be compliant before a first customer?",
+    { noOther: 1, o: [["Moins d'un mois", "Under a month"], ["1 à 3 mois", "1 to 3 months"], ["3 à 6 mois", "3 to 6 months"], ["Plus de 6 mois", "Over 6 months"]] });
 
-  /* Each guide is deliberately short: 6 to 9 questions for the interviewee, mostly one-tap answers.
+  /* Each guide is deliberately short: 6 to 9 choice questions, and no presentation of the project.
      Every other question defined above is a reserve: add its id to a list below to use it. */
   const S = (fr, en, qs, extra) => Object.assign({ t: [fr, en], qs }, extra || {});
-  const pitchC = { pitch: PITCH_CLIENT, sim: true };
-  const pitchR = { pitch: PITCH_REVIEW };
   const debrief = S("Débrief (équipe, après la réunion)", "Debrief (team, after the meeting)", ["d_takeaways", "d_signal", "d_next"],
     { team: true, note: ["À remplir entre vous, sans l'interlocuteur.", "Fill in among yourselves, without the interviewee."] });
-  const SIT = ["Leur situation", "Their situation"], OFF = ["Notre offre", "Our offer"];
+  const SIT = ["Leur situation", "Their situation"], NEED = ["Leurs attentes", "Their expectations"];
 
   const PROFILES = [
     { id: "owner", icon: "🏢", n: ["Dirigeant de PME", "SME owner / manager"],
       who: ["Gérant, DG ou directeur financier d'une entreprise de 10 à 250 personnes.", "Owner, CEO or finance director of a 10 to 250-person company."],
-      goal: ["Prouver que le problème existe et mesurer les freins à l'achat.", "Prove the problem exists and measure buying barriers."], dur: 12,
+      goal: ["Vérifier que le problème existe, et connaître les freins et le budget.", "Check the problem exists, and learn the barriers and the budget."], dur: 10,
       sections: [
         S(SIT[0], SIT[1], ["c_it_who", "p_incident", "p_detect", "s_soc_blockers"]),
-        pitchC,
-        S(OFF[0], OFF[1], ["r_matters", "o_services", "o_price_fair", "o_pilot", "o_refer"]), debrief] },
+        S(NEED[0], NEED[1], ["r_matters", "o_services", "o_budget", "o_pilot", "o_refer"]), debrief] },
     { id: "it", icon: "🖥️", n: ["Responsable informatique", "IT manager / sysadmin"],
       who: ["La personne qui gère les postes, les serveurs et le réseau au quotidien.", "The person running endpoints, servers and network day to day."],
-      goal: ["Évaluer la posture de sécurité réelle et la faisabilité technique.", "Assess the real security posture and technical feasibility."], dur: 12,
+      goal: ["Connaître la posture de sécurité réelle et les contraintes techniques.", "Learn the real security posture and the technical constraints."], dur: 10,
       sections: [
         S(SIT[0], SIT[1], ["s_tools", "t_logs", "p_incident", "p_detect"]),
-        pitchC,
-        S(OFF[0], OFF[1], ["t_agent", "o_services", "o_pilot", "o_refer"]), debrief] },
+        S(NEED[0], NEED[1], ["t_agent", "o_services", "o_pilot", "o_refer"]), debrief] },
     { id: "ciso", icon: "🏦", n: ["RSSI — banque, grand compte, organisme public", "CISO — bank, large account, public body"],
       who: ["Responsable sécurité d'une organisation réglementée ou de plus de 250 utilisateurs.", "Security lead at a regulated organisation or one with over 250 users."],
-      goal: ["Comprendre les exigences réglementaires et les conditions d'entrée.", "Understand regulatory requirements and entry conditions."], dur: 15,
+      goal: ["Comprendre les exigences réglementaires et les conditions imposées aux prestataires.", "Understand regulatory requirements and the conditions set for providers."], dur: 12,
       sections: [
         S(SIT[0], SIT[1], ["g_soc_current", "g_soc_pain", "p_incident", "r_compliance"]),
-        pitchC,
-        S(OFF[0], OFF[1], ["g_requirements", "g_hybrid", "g_procurement", "o_refer"]), debrief] },
+        S(NEED[0], NEED[1], ["g_requirements", "g_hybrid", "g_procurement", "o_refer"]), debrief] },
     { id: "ecom", icon: "🛒", n: ["Fondateur e-commerce / startup", "E-commerce / startup founder"],
       who: ["Fondateur ou CTO d'une boutique en ligne, fintech ou application avec paiement.", "Founder or CTO of an online shop, fintech or app with payments."],
-      goal: ["Tester les services web et fraude, et la sensibilité au prix des petites structures.", "Test the website and fraud services, and price sensitivity of small teams."], dur: 12,
+      goal: ["Mesurer les problèmes de fraude et de site, et le budget des petites structures.", "Measure fraud and website problems, and the budget of small teams."], dur: 10,
       sections: [
         S(SIT[0], SIT[1], ["e_pay", "p_incident", "e_fraud", "p_detect"]),
-        pitchC,
-        S(OFF[0], OFF[1], ["r_matters", "o_services", "o_price_fair", "o_pilot", "o_refer"]), debrief] },
+        S(NEED[0], NEED[1], ["r_matters", "o_services", "o_budget", "o_pilot", "o_refer"]), debrief] },
     { id: "expert", icon: "🛡️", n: ["Expert cybersécurité / praticien SOC", "Cybersecurity expert / SOC practitioner"],
       who: ["Analyste, architecte ou responsable SOC, consultant expérimenté.", "Analyst, architect or SOC lead, experienced consultant."],
-      goal: ["Faire critiquer l'architecture, la pile technique, les effectifs et les prix.", "Get the architecture, stack, staffing and prices challenged."], dur: 15,
+      goal: ["Comprendre le marché, les prix et les pièges vus par un praticien.", "Understand the market, prices and pitfalls as a practitioner sees them."], dur: 12,
       sections: [
-        S("Le marché", "The market", ["x_market"]),
-        pitchR,
-        S("Votre avis", "Your view", ["x_arch", "x_stack", "x_staff", "x_pricing", "x_pitfalls", "x_mvp", "x_advisor"]), debrief] },
+        S("Le marché", "The market", ["x_market", "x_demand", "x_price_real"]),
+        S("Faire tourner un SOC", "Running a SOC", ["x_stack", "x_staff", "x_pitfalls", "x_mvp", "o_refer"]), debrief] },
     { id: "academic", icon: "🎓", n: ["Doctorant / enseignant-chercheur", "Post-graduate student / academic"],
       who: ["Doctorants, étudiants de master et enseignants en sécurité informatique.", "PhD and master's students, and lecturers in IT security."],
-      goal: ["Faire relire le projet et valider le vivier d'analystes.", "Get the project reviewed and validate the analyst pipeline."], dur: 10,
+      goal: ["Connaître le vivier d'analystes et les partenariats universitaires possibles.", "Learn about the analyst pipeline and possible university partnerships."], dur: 10,
       sections: [
-        pitchR,
-        S("Votre avis", "Your view", ["a_review", "a_feasible"]),
-        S("Travailler dans un SOC", "Working in a SOC", ["a_analyst", "a_salary", "a_training", "a_partner", "o_refer"]), debrief] },
+        S("Compétences", "Skills", ["a_skills", "a_training"]),
+        S("Travailler dans un SOC", "Working in a SOC", ["a_analyst", "a_shifts", "a_salary", "a_partner", "o_refer"]), debrief] },
     { id: "incubator", icon: "🚀", n: ["Incubateur / accélérateur", "Incubator / accelerator"],
       who: ["Responsable de programme, chargé d'accompagnement, mentor business.", "Programme manager, startup coach, business mentor."],
-      goal: ["Connaître les critères de sélection et ce qui manque au dossier.", "Learn the selection criteria and what the application is missing."], dur: 10,
+      goal: ["Connaître les critères de sélection, les preuves attendues et le calendrier.", "Learn the selection criteria, the expected proof and the calendar."], dur: 10,
       sections: [
-        S("Le programme", "The programme", ["i_offer", "i_criteria"]),
-        pitchR,
-        S("Votre avis", "Your view", ["i_fit", "i_weak", "i_proof", "i_when"]), debrief] },
+        S("Le programme", "The programme", ["i_offer", "i_cyber", "i_when"]),
+        S("La sélection", "Selection", ["i_criteria", "i_proof", "i_funding"]), debrief] },
     { id: "partner", icon: "🤝", n: ["Intégrateur / prestataire / hébergeur", "Integrator / provider / hosting company"],
       who: ["Intégrateur IT, société d'infogérance, hébergeur ou acteur sécurité déjà en place.", "IT integrator, managed-service company, hosting provider or existing security player."],
-      goal: ["Comprendre les prix réels du marché et tester un canal de vente indirect.", "Understand real market prices and test an indirect sales channel."], dur: 10,
+      goal: ["Comprendre l'offre existante, les prix réels et les partenariats possibles.", "Understand the existing offer, real prices and possible partnerships."], dur: 10,
       sections: [
-        S("Le marché", "The market", ["m_services", "m_demand", "m_price"]),
-        pitchR,
-        S("Travailler ensemble", "Working together", ["m_view", "m_partner", "o_refer"]), debrief] },
+        S("Le marché", "The market", ["m_services", "m_demand", "m_why", "m_price"]),
+        S("Collaboration", "Collaboration", ["m_partner", "o_refer"]), debrief] },
     { id: "legal", icon: "⚖️", n: ["Juriste / expert conformité", "Legal / compliance expert"],
       who: ["Avocat, juriste du numérique, auditeur ou consultant conformité.", "Lawyer, digital-law specialist, auditor or compliance consultant."],
-      goal: ["Lever le risque réglementaire : loi 18-07, autorisations, contrats.", "Clear the regulatory risk: Law 18-07, authorisations, contracts."], dur: 10,
+      goal: ["Connaître les obligations légales d'un prestataire de surveillance de sécurité.", "Learn the legal obligations of a security monitoring provider."], dur: 10,
       sections: [
-        pitchR,
         S("Cadre légal", "Legal framework", ["l_1807", "l_auth", "l_hosting"]),
         S("En pratique", "In practice", ["l_contract", "l_risk", "l_timeline"]), debrief] }
   ];
@@ -331,8 +321,8 @@
     { id: "H4", t: ["L'hébergement en Algérie compte", "Hosting in Algeria matters"] },
     { id: "H5", t: ["Le paiement en DA compte", "Paying in DA matters"] },
     { id: "H6", t: ["Les rapports doivent être en français ou en arabe", "Reports must be in French or Arabic"] },
-    { id: "H7", t: ["Nos prix sont jugés acceptables", "Our prices are seen as acceptable"] },
-    { id: "H8", t: ["Un pilote gratuit lève le manque de confiance", "A free pilot overcomes the lack of trust"] }
+    { id: "H7", t: ["Un budget mensuel d'au moins 15 000 DA existe", "A monthly budget of at least 15,000 DA exists"] },
+    { id: "H8", t: ["Un essai gratuit serait accepté", "A free trial would be accepted"] }
   ];
 
   const BMC = [
@@ -345,7 +335,7 @@
 
   const RULES = [
     ["Annoncez la durée au début et tenez-la. Si le temps est écoulé, arrêtez-vous et remerciez.", "Announce the duration at the start and keep to it. When time is up, stop and say thank you."],
-    ["Parlez de leur vie, pas de votre idée : le pitch vient après les questions sur leur situation.", "Talk about their life, not your idea: the pitch comes after the questions about their situation."],
+    ["Ne présentez pas votre projet : vous êtes là pour écouter. Si on vous le demande, dites que vous étudiez le marché.", "Do not present your project: you are there to listen. If asked, say you are studying the market."],
     ["Demandez des faits passés (« la dernière fois que… »), pas des promesses (« achèteriez-vous… »).", "Ask about past facts (« the last time… »), not promises (« would you buy… »)."],
     ["Venez à deux : une personne parle, l'autre coche et note les mots exacts.", "Go in pairs: one talks, the other ticks and writes down exact words."],
     ["Un compliment n'est pas une preuve. Une date, un contact ou un budget en est une.", "A compliment is not evidence. A date, a contact or a budget is."]

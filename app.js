@@ -31,7 +31,7 @@
     brand: ["Kit d'entretiens SOC", "SOC interview kit"],
     nav_home: ["Guides", "Guides"], nav_list: ["Entretiens", "Interviews"], nav_ins: ["Synthèse", "Insights"], nav_price: ["Simulateur de prix", "Price simulator"],
     hero_t: ["Étude de marché : entretiens terrain", "Market study: field interviews"],
-    hero_s: ["Des entretiens de 10 à 15 minutes : 6 à 9 questions par profil, toutes à cocher (avec « Autre » si besoin), et une synthèse qui alimente le Business Model Canvas.", "Interviews of 10 to 15 minutes: 6 to 9 questions per profile, all tick-the-box (with « Other » when needed), and a summary that feeds the Business Model Canvas."],
+    hero_s: ["Des entretiens de 10 à 15 minutes : 6 à 9 questions par profil, toutes à cocher (avec « Autre » si besoin), sans présenter le projet, et une synthèse qui alimente le Business Model Canvas.", "Interviews of 10 to 15 minutes: 6 to 9 questions per profile, all tick-the-box (with « Other » when needed), without presenting the project, and a summary that feeds the Business Model Canvas."],
     start: ["Démarrer un entretien", "Start an interview"], preview: ["Voir le guide", "View the guide"],
     min: ["min", "min"], questions: ["questions", "questions"], done_n: ["réalisés", "done"],
     rules: ["Règles d'or de l'entretien", "Golden rules of interviewing"],
@@ -58,8 +58,8 @@
     imp_done: ["entretien(s) importé(s) ou mis à jour.", "interview(s) imported or updated."], imp_bad: ["Fichier illisible.", "Unreadable file."],
     sync_note: ["Les données restent dans ce navigateur. Pour les partager entre membres de l'équipe : exportez en JSON, puis importez sur l'autre appareil (les fiches sont fusionnées).", "Data stays in this browser. To share across the team: export as JSON, then import on the other device (records are merged)."],
     all_prof: ["Tous les profils", "All profiles"],
-    k_total: ["Entretiens", "Interviews"], k_done: ["Terminés", "Completed"], k_int: ["Ont subi un incident", "Had an incident"], k_wtp: ["Prix jugé acceptable", "Price seen as acceptable"],
-    k_pilot: ["Pilotes acceptés", "Pilots accepted"], k_strong: ["Signaux forts", "Strong signals"],
+    k_total: ["Entretiens", "Interviews"], k_done: ["Terminés", "Completed"], k_int: ["Ont subi un incident", "Had an incident"], k_wtp: ["Budget de 15 000 DA ou plus", "Budget of 15,000 DA or more"],
+    k_pilot: ["Essai gratuit accepté", "Free trial accepted"], k_strong: ["Signaux forts", "Strong signals"],
     hyp: ["Hypothèses à valider", "Hypotheses to validate"], hyp_n: ["réponses vont dans ce sens", "answers support this"],
     v_ok: ["Validée", "Validated"], v_no: ["Invalidée", "Invalidated"], v_mix: ["Mitigée", "Mixed"], v_few: ["Pas assez de données", "Not enough data"],
     hyp_note: ["Verdict à partir de 5 réponses : validée à 60 % ou plus, invalidée à 40 % ou moins.", "Verdict from 5 answers: validated at 60% or more, invalidated at 40% or less."],
@@ -118,7 +118,7 @@
     document.title = t("brand");
     const link = (h, k, r) => `<a href="#/${h}" class="${route === r ? "on" : ""}">${t(k)}</a>`;
     $("#top").innerHTML = `<a class="brand" href="#/"><span class="logo">🛡️</span>${t("brand")}</a>
-      <nav>${link("", "nav_home", "home")}${link("interviews", "nav_list", "interviews")}${link("insights", "nav_ins", "insights")}${link("pricing", "nav_price", "pricing")}</nav>
+      <nav>${link("", "nav_home", "home")}${link("interviews", "nav_list", "interviews")}${link("insights", "nav_ins", "insights")}</nav>
       <button class="btn ghost sm" data-act="lang" aria-label="Language">${lang === "fr" ? "EN" : "FR"}</button>`;
   }
 
@@ -301,11 +301,11 @@
   function vInsights() {
     const set = DB.filter(i => insFilter === "all" || i.profile === insFilter);
     const vals = id => set.map(i => i.answers[id] && i.answers[id].v).filter(hasV);
-    const kI = vals("p_incident"), kW = vals("o_price_fair"), kP = vals("o_pilot");
+    const kI = vals("p_incident"), kW = vals("o_budget"), kP = vals("o_pilot");
     const kpi = (k, v) => `<div class="kpi"><b>${v}</b><span>${t(k)}</span></div>`;
     const kpis = kpi("k_total", set.length) + kpi("k_done", set.filter(i => i.status === "done").length)
       + kpi("k_int", kI.length ? kI.filter(v => v === "y").length + " / " + kI.length : "–")
-      + kpi("k_wtp", kW.length ? kW.filter(Q.o_price_fair.sup).length + " / " + kW.length : "–")
+      + kpi("k_wtp", kW.length ? kW.filter(Q.o_budget.sup).length + " / " + kW.length : "–")
       + kpi("k_pilot", kP.length ? kP.filter(v => v === "y").length + " / " + kP.length : "–")
       + kpi("k_strong", vals("d_signal").filter(v => v === 0).length);
 
