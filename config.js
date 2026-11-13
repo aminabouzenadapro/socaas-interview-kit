@@ -1,5 +1,4 @@
-/* Shared team database (Supabase). See README, "Shared database".
-   url: the Project URL, e.g. "https://abcdefgh.supabase.co"
-   key: the "anon" / "publishable" key. It is meant to be public; never put the service_role key here.
+/* Shared team database (Supabase). There is no sign-in: anyone who has this key can read and write
+   the interviews table, and the key is public by design. Never put the service_role key here.
    Leave both empty to keep interviews only in the browser. */
-window.SYNC = { url: "", key: "" };
+window.SYNC = { url: "https://akqeayweqlklhhmwetox.supabase.co", key: "sb_publishable_6YAh9Emz0PIrHFJeIsSLew_E9W8FiKb" };

@@ -29,17 +29,11 @@ Exports contain personal data. Do not commit them (the `.gitignore` already excl
 
 ## Shared database
 
-With a Supabase project configured, every signed-in team member sees the same interviews. Each device still keeps its own copy and syncs when it is online; if two people edit the same interview, the most recent save wins.
+The site syncs every interview with a Supabase table, so all team devices see the same data. Each device still keeps its own copy and syncs when it is online; if two people edit the same interview, the most recent save wins. The cloud icon in the top bar shows the sync state; tap it to sync now.
 
-Setup, once:
+There is no sign-in. The project URL and publishable key in `config.js` are public, so anyone who finds them can read and change the interviews. Avoid storing phone numbers or emails in the records.
 
-1. Create a free project at supabase.com.
-2. In **SQL Editor**, paste and run `supabase-setup.sql`. It creates the `interviews` table and allows access to signed-in users only.
-3. In **Authentication → Sign In / Providers**, turn **off** "Allow new users to sign up". This matters: the site is public, and with sign-ups open anyone could create an account and read the interviews.
-4. In **Authentication → Users**, add one user per team member (email + password, auto-confirmed).
-5. In **Project Settings → API**, copy the Project URL and the `anon` (publishable) key into `config.js`, then commit and push. Never use the `service_role` key.
-
-Then each member opens the site, taps **☁ Connexion** in the top bar and signs in once per device.
+To use another Supabase project: run `supabase-setup.sql` in its SQL editor, then put its URL and publishable key in `config.js`.
 
 ## Editing the questions
 

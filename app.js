@@ -23,31 +23,19 @@
   const live = () => DB.filter(x => !x.deleted); // deleted records are kept as markers so the deletion syncs
 
   /* ---------- shared database (Supabase), optional: see config.js ---------- */
-  const CFG = window.SYNC || {}, SYNC_ON = !!(CFG.url && CFG.key), LSS = "socdz.session";
-  let sess = (() => { try { return JSON.parse(store.get(LSS)); } catch (e) { return null; } })();
+  const CFG = window.SYNC || {}, SYNC_ON = !!(CFG.url && CFG.key);
   let syncState = "idle", syncT = null, syncing = false, dirty = false;
   async function api(path, opt) {
     opt = opt || {};
-    const headers = Object.assign({ apikey: CFG.key, "Content-Type": "application/json" }, sess && !opt.noAuth ? { Authorization: "Bearer " + sess.access_token } : {}, opt.headers);
+    const headers = Object.assign({ apikey: CFG.key, "Content-Type": "application/json" }, opt.headers);
     const r = await fetch(CFG.url.replace(/\/$/, "") + path, { method: opt.method || "GET", headers, body: opt.body });
     if (!r.ok) { const e = new Error("HTTP " + r.status); e.status = r.status; throw e; }
     return r.json().catch(() => null);
   }
-  function setSess(s) {
-    sess = s && s.access_token ? { access_token: s.access_token, refresh_token: s.refresh_token, expires_at: Date.now() + (s.expires_in || 3600) * 1000, email: (s.user && s.user.email) || (sess && sess.email) || "" } : null;
-    store.set(LSS, JSON.stringify(sess));
-  }
-  async function signIn(email, password) {
-    setSess(await api("/auth/v1/token?grant_type=password", { method: "POST", noAuth: true, body: JSON.stringify({ email, password }) }));
-  }
   async function sync() {
-    if (!SYNC_ON || !sess || syncing) return;
+    if (!SYNC_ON || syncing) return;
     syncing = true; syncState = "busy"; drawSync();
     try {
-      if (sess.expires_at - 60000 < Date.now()) {
-        try { setSess(await api("/auth/v1/token?grant_type=refresh_token", { method: "POST", noAuth: true, body: JSON.stringify({ refresh_token: sess.refresh_token }) })); }
-        catch (e) { if (e.status) setSess(null); throw e; }
-      }
       const rows = await api("/rest/v1/interviews?select=id,data,updated") || [];
       const remote = new Map(rows.map(r => [r.id, r])); let changed = false;
       rows.forEach(r => {
@@ -60,19 +48,15 @@
       if (out.length) await api("/rest/v1/interviews?on_conflict=id", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify(out) });
       dirty = false; syncState = "ok";
       if (changed) { persist(); if (!cur) render(); }
-    } catch (e) {
-      if (e.status === 401) setSess(null);
-      syncState = sess ? "err" : "idle";
-    }
+    } catch (e) { syncState = e.status ? "refused" : "err"; }
     syncing = false; drawSync();
-    if (!sess && location.hash.indexOf("#/login") === 0) render();
   }
-  const queueSync = () => { if (!SYNC_ON || !sess) return; clearTimeout(syncT); syncT = setTimeout(sync, 2500); };
+  const queueSync = () => { if (!SYNC_ON) return; clearTimeout(syncT); syncT = setTimeout(sync, 2500); };
   function drawSync() {
     const b = $("#syncb"); if (!b) return;
-    b.textContent = "☁ " + (!sess ? t("sy_login") : syncState === "busy" ? "…" : syncState === "err" ? t("sy_off") : "✓");
-    b.classList.toggle("bad", !!sess && syncState === "err");
-    const s = $("#systate"); if (s) s.textContent = syncState === "busy" ? t("sy_busy") : syncState === "err" ? t("sy_err") : syncState === "ok" ? t("sy_ok") : "";
+    b.textContent = "☁ " + (syncState === "busy" ? "…" : syncState === "err" ? t("sy_off") : syncState === "refused" ? t("sy_ref") : "✓");
+    b.classList.toggle("bad", syncState === "err" || syncState === "refused");
+    b.title = syncState === "err" ? t("sy_err") : syncState === "refused" ? t("sy_refused") : t("sy_ok");
   }
 
   const L = a => Array.isArray(a) ? a[lang === "fr" ? 0 : 1] : a;
@@ -97,14 +81,10 @@
     m_team: ["Intervieweurs", "Interviewers"], m_contact: ["Contact (tél. / e-mail)", "Contact (phone / email)"],
     mode_o: [["En personne", "In person"], ["En ligne", "Online"], ["Téléphone", "Phone"]],
     notes: ["Notes, citations…", "Notes, quotes…"], answer: ["Réponse…", "Answer…"],
-    sy_login: ["Connexion", "Sign in"], sy_off: ["hors ligne", "offline"], sy_title: ["Base partagée de l'équipe", "Team shared database"],
-    sy_busy: ["Synchronisation…", "Syncing…"], sy_ok: ["Tout est synchronisé.", "Everything is synced."],
+    sy_off: ["hors ligne", "offline"], sy_ref: ["erreur", "error"], sy_ok: ["Synchronisé avec la base de l'équipe. Touchez pour resynchroniser.", "Synced with the team database. Tap to sync again."],
     sy_err: ["Pas de connexion : les fiches restent sur cet appareil et partiront dès que possible.", "No connection: records stay on this device and will be sent as soon as possible."],
-    sy_email: ["E-mail", "Email"], sy_pass: ["Mot de passe", "Password"], sy_in: ["Se connecter", "Sign in"], sy_out: ["Se déconnecter", "Sign out"], sy_now: ["Synchroniser maintenant", "Sync now"],
-    sy_as: ["Connecté en tant que", "Signed in as"], sy_bad: ["Connexion impossible : vérifiez l'e-mail, le mot de passe et la connexion internet.", "Could not sign in: check the email, the password and the internet connection."],
-    sy_intro: ["Connectez-vous avec le compte créé pour vous par l'équipe. Vos fiches seront partagées avec les autres membres.", "Sign in with the account the team created for you. Your records will be shared with the other members."],
-    sy_none: ["La base partagée n'est pas encore configurée : les fiches restent sur cet appareil.", "The shared database is not configured yet: records stay on this device."],
-    sy_shared: ["Les fiches sont partagées avec l'équipe quand vous êtes connecté ; hors ligne, elles restent sur l'appareil puis se synchronisent.", "Records are shared with the team when you are signed in; offline, they stay on the device and sync later."],
+    sy_refused: ["La base a refusé l'accès : vérifiez la configuration Supabase.", "The database refused access: check the Supabase setup."],
+    sy_shared: ["Les fiches sont partagées automatiquement avec l'équipe ; hors ligne, elles restent sur l'appareil puis se synchronisent.", "Records are shared with the team automatically; offline, they stay on the device and sync later."],
     other: ["Autre", "Other"], other_ph: ["Précisez…", "Specify…"],
     yes: ["Oui", "Yes"], no: ["Non", "No"], unk: ["Ne sait pas", "Doesn't know"],
     saved: ["Enregistré", "Saved"], save_fail: ["Échec de l'enregistrement local", "Local save failed"],
@@ -178,7 +158,7 @@
     const link = (h, k, r) => `<a href="#/${h}" class="${route === r ? "on" : ""}">${t(k)}</a>`;
     $("#top").innerHTML = `<a class="brand" href="#/"><span class="logo">🛡️</span>${t("brand")}</a>
       <nav>${link("", "nav_home", "home")}${link("interviews", "nav_list", "interviews")}${link("insights", "nav_ins", "insights")}</nav>
-      ${SYNC_ON ? `<a class="btn ghost sm sync" href="#/login" id="syncb"></a>` : ""}<button class="btn ghost sm" data-act="lang" aria-label="Language">${lang === "fr" ? "EN" : "FR"}</button>`;
+      ${SYNC_ON ? `<button class="btn ghost sm sync" data-act="syncNow" id="syncb"></button>` : ""}<button class="btn ghost sm" data-act="lang" aria-label="Language">${lang === "fr" ? "EN" : "FR"}</button>`;
     drawSync();
   }
 
@@ -187,25 +167,10 @@
     const [r, arg] = location.hash.replace(/^#\/?/, "").split("/");
     const route = r || "home";
     shell(route === "guide" ? "home" : (route === "interview" || route === "report") ? "interviews" : route);
-    const views = { login: vLogin, home: vHome, guide: vGuide, interview: vInterview, report: vReport, interviews: vList, insights: vInsights, pricing: vPricing };
+    const views = { home: vHome, guide: vGuide, interview: vInterview, report: vReport, interviews: vList, insights: vInsights, pricing: vPricing };
     app.innerHTML = (views[route] || (() => `<p class="empty">${t("notfound")}</p>`))(arg);
     if (route === "pricing") drawQuote();
-    if (route === "login") drawSync();
     if (route === "interview" && cur) { updateProgress(); drawTimer(); }
-  }
-
-  /* ---------- sign-in ---------- */
-  function vLogin() {
-    if (!SYNC_ON) return `<header class="page-h"><h1>${t("sy_title")}</h1></header><p class="callout">${t("sy_none")}</p>`;
-    if (sess) return `<header class="page-h"><h1>${t("sy_title")}</h1></header>
-      <section class="card login"><p>${t("sy_as")} <b>${esc(sess.email)}</b></p><p class="muted" id="systate"></p>
-      <div class="row"><button class="btn" data-act="syncNow">${t("sy_now")}</button><button class="btn ghost" data-act="signOut">${t("sy_out")}</button></div></section>`;
-    return `<header class="page-h"><h1>${t("sy_title")}</h1></header>
-      <form class="card login" id="loginf"><p class="muted">${t("sy_intro")}</p>
-        <label>${t("sy_email")}<input type="email" name="email" autocomplete="username" required></label>
-        <label>${t("sy_pass")}<input type="password" name="password" autocomplete="current-password" required></label>
-        <p class="callout" id="lerr" hidden>${t("sy_bad")}</p>
-        <div class="row"><button class="btn" type="submit">${t("sy_in")}</button></div></form>`;
   }
 
   /* ---------- home ---------- */
@@ -495,7 +460,6 @@
     del(b) { if (!confirm(t("del_confirm"))) return; const iv = DB.find(x => x.id === b.dataset.id); if (iv) { iv.deleted = true; iv.updated = Date.now(); } dirty = true; render(); },
     expJson() { download("soc-interviews-" + today() + ".json", JSON.stringify(live(), null, 2), "application/json"); },
     syncNow() { sync(); },
-    signOut() { setSess(null); syncState = "idle"; render(); },
     expCsv: exportCsv
   };
   document.addEventListener("click", e => { const b = e.target.closest("[data-act]"); if (b && acts[b.dataset.act]) acts[b.dataset.act](b); });
@@ -518,11 +482,6 @@
   document.addEventListener("change", e => {
     if (e.target.id === "insf") { insFilter = e.target.value; render(); }
     if (e.target.id === "imp" && e.target.files[0]) importJson(e.target.files[0]);
-  });
-  document.addEventListener("submit", e => {
-    if (e.target.id !== "loginf") return; e.preventDefault();
-    const f = e.target, btn = $("button", f); btn.disabled = true;
-    signIn(f.email.value.trim(), f.password.value).then(() => { render(); sync(); }, () => { btn.disabled = false; $("#lerr").hidden = false; });
   });
   window.addEventListener("online", sync);
   setInterval(() => { if (!document.hidden) sync(); }, 60000);
