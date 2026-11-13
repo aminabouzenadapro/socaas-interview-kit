@@ -21,11 +21,25 @@ python -m http.server 8000
 
 ## Where the data goes
 
-Interviews are stored only in the browser you used (localStorage). Nothing is sent anywhere.
+Interviews are always saved in the browser first (localStorage), so the form works without a connection.
 
-To share between team members: **Interviews → Export (JSON)** on one device, then **Import (JSON)** on the other. Records are merged by id and the most recent version wins.
+Without a shared database, you move data between devices by hand: **Interviews → Export (JSON)** on one device, then **Import (JSON)** on the other.
 
-Exports contain personal data. Do not commit them (the `.gitignore` already excludes the default file names).
+Exports contain personal data. Do not commit them (the  already excludes the default file names).
+
+## Shared database
+
+With a Supabase project configured, every signed-in team member sees the same interviews. Each device still keeps its own copy and syncs when it is online; if two people edit the same interview, the most recent save wins.
+
+Setup, once:
+
+1. Create a free project at supabase.com.
+2. In **SQL Editor**, paste and run . It creates the  table and allows access to signed-in users only.
+3. In **Authentication → Sign In / Providers**, turn **off** "Allow new users to sign up". This matters: the site is public, and with sign-ups open anyone could create an account and read the interviews.
+4. In **Authentication → Users**, add one user per team member (email + password, auto-confirmed).
+5. In **Project Settings → API**, copy the Project URL and the  (publishable) key into , then commit and push. Never use the  key.
+
+Then each member opens the site, taps **☁ Connexion** in the top bar and signs in once per device.
 
 ## Editing the questions
 

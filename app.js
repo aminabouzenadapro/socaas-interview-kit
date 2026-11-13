@@ -20,6 +20,60 @@
     if (!ok) { a.n = [String(a.v), a.n].filter(Boolean).join("\n"); delete a.v; }
   }));
   const persist = () => store.set(LS, JSON.stringify(DB));
+  const live = () => DB.filter(x => !x.deleted); // deleted records are kept as markers so the deletion syncs
+
+  /* ---------- shared database (Supabase), optional: see config.js ---------- */
+  const CFG = window.SYNC || {}, SYNC_ON = !!(CFG.url && CFG.key), LSS = "socdz.session";
+  let sess = (() => { try { return JSON.parse(store.get(LSS)); } catch (e) { return null; } })();
+  let syncState = "idle", syncT = null, syncing = false, dirty = false;
+  async function api(path, opt) {
+    opt = opt || {};
+    const headers = Object.assign({ apikey: CFG.key, "Content-Type": "application/json" }, sess && !opt.noAuth ? { Authorization: "Bearer " + sess.access_token } : {}, opt.headers);
+    const r = await fetch(CFG.url.replace(/\/$/, "") + path, { method: opt.method || "GET", headers, body: opt.body });
+    if (!r.ok) { const e = new Error("HTTP " + r.status); e.status = r.status; throw e; }
+    return r.json().catch(() => null);
+  }
+  function setSess(s) {
+    sess = s && s.access_token ? { access_token: s.access_token, refresh_token: s.refresh_token, expires_at: Date.now() + (s.expires_in || 3600) * 1000, email: (s.user && s.user.email) || (sess && sess.email) || "" } : null;
+    store.set(LSS, JSON.stringify(sess));
+  }
+  async function signIn(email, password) {
+    setSess(await api("/auth/v1/token?grant_type=password", { method: "POST", noAuth: true, body: JSON.stringify({ email, password }) }));
+  }
+  async function sync() {
+    if (!SYNC_ON || !sess || syncing) return;
+    syncing = true; syncState = "busy"; drawSync();
+    try {
+      if (sess.expires_at - 60000 < Date.now()) {
+        try { setSess(await api("/auth/v1/token?grant_type=refresh_token", { method: "POST", noAuth: true, body: JSON.stringify({ refresh_token: sess.refresh_token }) })); }
+        catch (e) { if (e.status) setSess(null); throw e; }
+      }
+      const rows = await api("/rest/v1/interviews?select=id,data,updated") || [];
+      const remote = new Map(rows.map(r => [r.id, r])); let changed = false;
+      rows.forEach(r => {
+        if (!r.data || !PROF[r.data.profile] || typeof r.data.answers !== "object") return;
+        const i = DB.findIndex(x => x.id === r.id);
+        if (i < 0) { DB.push(r.data); changed = true; }
+        else if (r.updated > (DB[i].updated || 0) && !(cur && cur.id === r.id)) { DB[i] = r.data; changed = true; }
+      });
+      const out = DB.filter(x => !remote.has(x.id) || (x.updated || 0) > remote.get(x.id).updated).map(x => ({ id: x.id, data: x, updated: x.updated || 0 }));
+      if (out.length) await api("/rest/v1/interviews?on_conflict=id", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify(out) });
+      dirty = false; syncState = "ok";
+      if (changed) { persist(); if (!cur) render(); }
+    } catch (e) {
+      if (e.status === 401) setSess(null);
+      syncState = sess ? "err" : "idle";
+    }
+    syncing = false; drawSync();
+    if (!sess && location.hash.indexOf("#/login") === 0) render();
+  }
+  const queueSync = () => { if (!SYNC_ON || !sess) return; clearTimeout(syncT); syncT = setTimeout(sync, 2500); };
+  function drawSync() {
+    const b = $("#syncb"); if (!b) return;
+    b.textContent = "☁ " + (!sess ? t("sy_login") : syncState === "busy" ? "…" : syncState === "err" ? t("sy_off") : "✓");
+    b.classList.toggle("bad", !!sess && syncState === "err");
+    const s = $("#systate"); if (s) s.textContent = syncState === "busy" ? t("sy_busy") : syncState === "err" ? t("sy_err") : syncState === "ok" ? t("sy_ok") : "";
+  }
 
   const L = a => Array.isArray(a) ? a[lang === "fr" ? 0 : 1] : a;
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -43,6 +97,14 @@
     m_team: ["Intervieweurs", "Interviewers"], m_contact: ["Contact (tél. / e-mail)", "Contact (phone / email)"],
     mode_o: [["En personne", "In person"], ["En ligne", "Online"], ["Téléphone", "Phone"]],
     notes: ["Notes, citations…", "Notes, quotes…"], answer: ["Réponse…", "Answer…"],
+    sy_login: ["Connexion", "Sign in"], sy_off: ["hors ligne", "offline"], sy_title: ["Base partagée de l'équipe", "Team shared database"],
+    sy_busy: ["Synchronisation…", "Syncing…"], sy_ok: ["Tout est synchronisé.", "Everything is synced."],
+    sy_err: ["Pas de connexion : les fiches restent sur cet appareil et partiront dès que possible.", "No connection: records stay on this device and will be sent as soon as possible."],
+    sy_email: ["E-mail", "Email"], sy_pass: ["Mot de passe", "Password"], sy_in: ["Se connecter", "Sign in"], sy_out: ["Se déconnecter", "Sign out"], sy_now: ["Synchroniser maintenant", "Sync now"],
+    sy_as: ["Connecté en tant que", "Signed in as"], sy_bad: ["Connexion impossible : vérifiez l'e-mail, le mot de passe et la connexion internet.", "Could not sign in: check the email, the password and the internet connection."],
+    sy_intro: ["Connectez-vous avec le compte créé pour vous par l'équipe. Vos fiches seront partagées avec les autres membres.", "Sign in with the account the team created for you. Your records will be shared with the other members."],
+    sy_none: ["La base partagée n'est pas encore configurée : les fiches restent sur cet appareil.", "The shared database is not configured yet: records stay on this device."],
+    sy_shared: ["Les fiches sont partagées avec l'équipe quand vous êtes connecté ; hors ligne, elles restent sur l'appareil puis se synchronisent.", "Records are shared with the team when you are signed in; offline, they stay on the device and sync later."],
     other: ["Autre", "Other"], other_ph: ["Précisez…", "Specify…"],
     yes: ["Oui", "Yes"], no: ["Non", "No"], unk: ["Ne sait pas", "Doesn't know"],
     saved: ["Enregistré", "Saved"], save_fail: ["Échec de l'enregistrement local", "Local save failed"],
@@ -116,7 +178,8 @@
     const link = (h, k, r) => `<a href="#/${h}" class="${route === r ? "on" : ""}">${t(k)}</a>`;
     $("#top").innerHTML = `<a class="brand" href="#/"><span class="logo">🛡️</span>${t("brand")}</a>
       <nav>${link("", "nav_home", "home")}${link("interviews", "nav_list", "interviews")}${link("insights", "nav_ins", "insights")}</nav>
-      <button class="btn ghost sm" data-act="lang" aria-label="Language">${lang === "fr" ? "EN" : "FR"}</button>`;
+      ${SYNC_ON ? `<a class="btn ghost sm sync" href="#/login" id="syncb"></a>` : ""}<button class="btn ghost sm" data-act="lang" aria-label="Language">${lang === "fr" ? "EN" : "FR"}</button>`;
+    drawSync();
   }
 
   function render() {
@@ -124,16 +187,31 @@
     const [r, arg] = location.hash.replace(/^#\/?/, "").split("/");
     const route = r || "home";
     shell(route === "guide" ? "home" : (route === "interview" || route === "report") ? "interviews" : route);
-    const views = { home: vHome, guide: vGuide, interview: vInterview, report: vReport, interviews: vList, insights: vInsights, pricing: vPricing };
+    const views = { login: vLogin, home: vHome, guide: vGuide, interview: vInterview, report: vReport, interviews: vList, insights: vInsights, pricing: vPricing };
     app.innerHTML = (views[route] || (() => `<p class="empty">${t("notfound")}</p>`))(arg);
     if (route === "pricing") drawQuote();
+    if (route === "login") drawSync();
     if (route === "interview" && cur) { updateProgress(); drawTimer(); }
+  }
+
+  /* ---------- sign-in ---------- */
+  function vLogin() {
+    if (!SYNC_ON) return `<header class="page-h"><h1>${t("sy_title")}</h1></header><p class="callout">${t("sy_none")}</p>`;
+    if (sess) return `<header class="page-h"><h1>${t("sy_title")}</h1></header>
+      <section class="card login"><p>${t("sy_as")} <b>${esc(sess.email)}</b></p><p class="muted" id="systate"></p>
+      <div class="row"><button class="btn" data-act="syncNow">${t("sy_now")}</button><button class="btn ghost" data-act="signOut">${t("sy_out")}</button></div></section>`;
+    return `<header class="page-h"><h1>${t("sy_title")}</h1></header>
+      <form class="card login" id="loginf"><p class="muted">${t("sy_intro")}</p>
+        <label>${t("sy_email")}<input type="email" name="email" autocomplete="username" required></label>
+        <label>${t("sy_pass")}<input type="password" name="password" autocomplete="current-password" required></label>
+        <p class="callout" id="lerr" hidden>${t("sy_bad")}</p>
+        <div class="row"><button class="btn" type="submit">${t("sy_in")}</button></div></form>`;
   }
 
   /* ---------- home ---------- */
   function vHome() {
     const cards = PROFILES.map(p => {
-      const n = DB.filter(i => i.profile === p.id).length;
+      const n = live().filter(i => i.profile === p.id).length;
       return `<article class="card prof">
         <div class="prof-h"><span class="ico">${p.icon}</span><h3>${L(p.n)}</h3></div>
         <p class="muted">${L(p.who)}</p>
@@ -191,7 +269,7 @@
   /* ---------- interview ---------- */
   const META = [["name", "text"], ["role", "text"], ["company", "text"], ["sector", "text"], ["size", "number"], ["wilaya", "text"], ["date", "date"], ["contact", "text"]];
   function vInterview(id) {
-    const iv = DB.find(x => x.id === id); if (!iv) return `<p class="empty">${t("notfound")}</p>`;
+    const iv = DB.find(x => x.id === id && !x.deleted); if (!iv) return `<p class="empty">${t("notfound")}</p>`;
     cur = iv; const p = PROF[iv.profile];
     const meta = META.map(([k, ty]) => `<label>${t("m_" + k)}${ty === "select"
       ? `<select data-meta="${k}">${UI.mode_o.map((o, i) => `<option value="${i}"${String(iv.meta[k]) === String(i) ? " selected" : ""}>${L(o)}</option>`).join("")}</select>`
@@ -220,18 +298,19 @@
     el.classList.toggle("run", !!tick);
   }
   function touch() {
-    if (!cur) return; cur.updated = Date.now();
+    if (!cur) return; cur.updated = Date.now(); dirty = true;
     clearTimeout(saveT); saveT = setTimeout(flush, 400);
   }
   function flush() {
     clearTimeout(saveT); saveT = null;
     const ok = persist(); const el = $("#saved");
+    if (dirty) queueSync();
     if (el) { el.textContent = ok ? "✓ " + t("saved") : "⚠ " + t("save_fail"); el.classList.toggle("bad", !ok); }
   }
 
   /* ---------- report ---------- */
   function vReport(id) {
-    const iv = DB.find(x => x.id === id); if (!iv) return `<p class="empty">${t("notfound")}</p>`;
+    const iv = DB.find(x => x.id === id && !x.deleted); if (!iv) return `<p class="empty">${t("notfound")}</p>`;
     const p = PROF[iv.profile], m = iv.meta;
     const rows = META.filter(([k]) => hasV(m[k])).map(([k]) => `<div><dt>${t("m_" + k)}</dt><dd>${esc(k === "mode" ? L(UI.mode_o[m[k]] || "") : m[k])}</dd></div>`).join("");
     const secs = p.sections.filter(s => s.qs).map(s => {
@@ -250,7 +329,7 @@
 
   /* ---------- list ---------- */
   function vList() {
-    const items = DB.slice().sort((a, b) => b.updated - a.updated).map(iv => {
+    const items = live().sort((a, b) => b.updated - a.updated).map(iv => {
       const p = PROF[iv.profile], [a, n] = progress(iv), sig = iv.answers.d_signal && iv.answers.d_signal.v;
       return `<article class="card item">
         <div><h3><a href="#/interview/${iv.id}">${esc(who(iv))}</a></h3>
@@ -259,16 +338,16 @@
         <div class="row"><a class="btn sm" href="#/interview/${iv.id}">${t("open")}</a><a class="btn ghost sm" href="#/report/${iv.id}">${t("report")}</a>
           <button class="btn ghost sm danger" data-act="del" data-id="${iv.id}">${t("del")}</button></div></article>`;
     }).join("");
-    return `<header class="page-h"><h1>${t("nav_list")} <span class="count">${DB.length}</span></h1>
+    return `<header class="page-h"><h1>${t("nav_list")} <span class="count">${live().length}</span></h1>
         <div class="row"><button class="btn ghost sm" data-act="expJson">${t("exp_json")}</button><button class="btn ghost sm" data-act="expCsv">${t("exp_csv")}</button>
           <label class="btn ghost sm">${t("imp")}<input type="file" id="imp" accept="application/json,.json" hidden></label></div></header>
-      <p class="callout">${t("sync_note")} ${t("privacy")}</p>
+      <p class="callout">${SYNC_ON ? t("sy_shared") : t("sync_note")} ${t("privacy")}</p>
       ${items || `<p class="empty">${t("none_yet")}</p>`}`;
   }
   function exportCsv() {
     const qs = USED, cell = x => '"' + String(x == null ? "" : x).replace(/"/g, '""') + '"';
     const head = ["id", "profile", "status", "minutes"].concat(META.map(m => m[0]), qs.flatMap(q => q.type === "text" ? [q.id] : [q.id, q.id + "_notes"]));
-    const lines = DB.map(iv => [iv.id, L(PROF[iv.profile].n), iv.status, Math.round((iv.elapsed || 0) / 60)]
+    const lines = live().map(iv => [iv.id, L(PROF[iv.profile].n), iv.status, Math.round((iv.elapsed || 0) / 60)]
       .concat(META.map(([k]) => k === "mode" ? L(UI.mode_o[iv.meta[k]] || "") : iv.meta[k]),
         qs.flatMap(q => { const a = iv.answers[q.id] || {}; return q.type === "text" ? [a.v] : [valLabel(q, a.v, a.o), a.n]; })).map(cell).join(";"));
     const labels = ["", "", "", ""].concat(META.map(m => t("m_" + m[0])), qs.flatMap(q => q.type === "text" ? [L(q.t)] : [L(q.t), ""])).map(cell).join(";");
@@ -286,7 +365,7 @@
           const i = DB.findIndex(y => y.id === x.id);
           if (i < 0) { DB.push(x); n++; } else if ((x.updated || 0) > (DB[i].updated || 0)) { DB[i] = x; n++; }
         });
-        persist(); alert(n + " " + t("imp_done")); render();
+        dirty = true; persist(); alert(n + " " + t("imp_done")); render();
       } catch (e) { alert(t("imp_bad")); }
     };
     fr.readAsText(file);
@@ -294,7 +373,7 @@
 
   /* ---------- insights ---------- */
   function vInsights() {
-    const set = DB.filter(i => insFilter === "all" || i.profile === insFilter);
+    const set = live().filter(i => insFilter === "all" || i.profile === insFilter);
     const vals = id => set.map(i => i.answers[id] && i.answers[id].v).filter(hasV);
     const kI = vals("p_incident"), kW = vals("o_budget"), kP = vals("o_pilot");
     const kpi = (k, v) => `<div class="kpi"><b>${v}</b><span>${t(k)}</span></div>`;
@@ -393,7 +472,7 @@
     lang() { lang = lang === "fr" ? "en" : "fr"; store.set(LSL, lang); render(); },
     start(b) {
       const iv = { id: "iv" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), profile: b.dataset.id, status: "draft", meta: { date: today() }, answers: {}, elapsed: 0, created: Date.now(), updated: Date.now() };
-      DB.push(iv); persist(); location.hash = "#/interview/" + iv.id;
+      DB.push(iv); dirty = true; persist(); location.hash = "#/interview/" + iv.id;
     },
     opt(b) {
       if (!cur) return; const box = b.closest(".q"), q = Q[box.dataset.q], a = cur.answers[q.id] || (cur.answers[q.id] = {});
@@ -413,8 +492,10 @@
     },
     finish() { cur.status = "done"; const id = cur.id; touch(); flush(); location.hash = "#/report/" + id; },
     print() { window.print(); },
-    del(b) { if (!confirm(t("del_confirm"))) return; DB = DB.filter(x => x.id !== b.dataset.id); persist(); render(); },
-    expJson() { download("soc-interviews-" + today() + ".json", JSON.stringify(DB, null, 2), "application/json"); },
+    del(b) { if (!confirm(t("del_confirm"))) return; const iv = DB.find(x => x.id === b.dataset.id); if (iv) { iv.deleted = true; iv.updated = Date.now(); } dirty = true; render(); },
+    expJson() { download("soc-interviews-" + today() + ".json", JSON.stringify(live(), null, 2), "application/json"); },
+    syncNow() { sync(); },
+    signOut() { setSess(null); syncState = "idle"; render(); },
     expCsv: exportCsv
   };
   document.addEventListener("click", e => { const b = e.target.closest("[data-act]"); if (b && acts[b.dataset.act]) acts[b.dataset.act](b); });
@@ -438,8 +519,16 @@
     if (e.target.id === "insf") { insFilter = e.target.value; render(); }
     if (e.target.id === "imp" && e.target.files[0]) importJson(e.target.files[0]);
   });
+  document.addEventListener("submit", e => {
+    if (e.target.id !== "loginf") return; e.preventDefault();
+    const f = e.target, btn = $("button", f); btn.disabled = true;
+    signIn(f.email.value.trim(), f.password.value).then(() => { render(); sync(); }, () => { btn.disabled = false; $("#lerr").hidden = false; });
+  });
+  window.addEventListener("online", sync);
+  setInterval(() => { if (!document.hidden) sync(); }, 60000);
   window.addEventListener("hashchange", () => { render(); window.scrollTo(0, 0); });
   window.addEventListener("beforeunload", flush);
   document.addEventListener("visibilitychange", () => { if (document.hidden) flush(); });
   render();
+  sync();
 })();
