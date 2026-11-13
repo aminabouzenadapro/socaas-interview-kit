@@ -26,7 +26,7 @@
     brand: ["Kit d'entretiens SOC", "SOC interview kit"],
     nav_home: ["Guides", "Guides"], nav_list: ["Entretiens", "Interviews"], nav_ins: ["Synthèse", "Insights"], nav_price: ["Simulateur de prix", "Price simulator"],
     hero_t: ["Étude de marché : entretiens terrain", "Market study: field interviews"],
-    hero_s: ["Un guide par profil rencontré, une fiche à remplir pendant la réunion, et une synthèse qui alimente directement le Business Model Canvas.", "One guide per profile you meet, a form to fill in during the meeting, and a summary that feeds straight into the Business Model Canvas."],
+    hero_s: ["Des entretiens de 10 à 15 minutes : 6 à 9 questions par profil, presque toutes à cocher, et une synthèse qui alimente le Business Model Canvas.", "Interviews of 10 to 15 minutes: 6 to 9 questions per profile, almost all one-tap, and a summary that feeds the Business Model Canvas."],
     start: ["Démarrer un entretien", "Start an interview"], preview: ["Voir le guide", "View the guide"],
     min: ["min", "min"], questions: ["questions", "questions"], done_n: ["réalisés", "done"],
     rules: ["Règles d'or de l'entretien", "Golden rules of interviewing"],
@@ -42,8 +42,6 @@
     mode_o: [["En personne", "In person"], ["En ligne", "Online"], ["Téléphone", "Phone"]],
     notes: ["Notes, citations…", "Notes, quotes…"], answer: ["Réponse…", "Answer…"],
     yes: ["Oui", "Yes"], no: ["Non", "No"], unk: ["Ne sait pas", "Doesn't know"],
-    keys_on: ["Mode court (15 min)", "Short mode (15 min)"], keys_off: ["Toutes les questions", "All questions"],
-    key_badge: ["Essentielle", "Must-ask"],
     saved: ["Enregistré", "Saved"], save_fail: ["Échec de l'enregistrement local", "Local save failed"],
     finish: ["Terminer l'entretien", "Finish the interview"], reopen: ["Modifier", "Edit"], report: ["Compte rendu", "Report"],
     print: ["Imprimer / PDF", "Print / PDF"], del: ["Supprimer", "Delete"], open: ["Ouvrir", "Open"],
@@ -54,7 +52,7 @@
     imp_done: ["entretien(s) importé(s) ou mis à jour.", "interview(s) imported or updated."], imp_bad: ["Fichier illisible.", "Unreadable file."],
     sync_note: ["Les données restent dans ce navigateur. Pour les partager entre membres de l'équipe : exportez en JSON, puis importez sur l'autre appareil (les fiches sont fusionnées).", "Data stays in this browser. To share across the team: export as JSON, then import on the other device (records are merged)."],
     all_prof: ["Tous les profils", "All profiles"],
-    k_total: ["Entretiens", "Interviews"], k_done: ["Terminés", "Completed"], k_int: ["Intérêt moyen", "Average interest"], k_wtp: ["Budget mensuel médian", "Median monthly budget"],
+    k_total: ["Entretiens", "Interviews"], k_done: ["Terminés", "Completed"], k_int: ["Ont subi un incident", "Had an incident"], k_wtp: ["Prix jugé acceptable", "Price seen as acceptable"],
     k_pilot: ["Pilotes acceptés", "Pilots accepted"], k_strong: ["Signaux forts", "Strong signals"],
     hyp: ["Hypothèses à valider", "Hypotheses to validate"], hyp_n: ["réponses vont dans ce sens", "answers support this"],
     v_ok: ["Validée", "Validated"], v_no: ["Invalidée", "Invalidated"], v_mix: ["Mitigée", "Mixed"], v_few: ["Pas assez de données", "Not enough data"],
@@ -77,6 +75,8 @@
 
   /* ---------- helpers on interviews ---------- */
   const profQs = p => p.sections.flatMap(s => s.qs || []).map(id => Q[id]);
+  const askCount = p => p.sections.filter(s => !s.team).flatMap(s => s.qs || []).length;
+  const USED = Object.values(Q).filter(q => PROFILES.some(p => profQs(p).includes(q)));
   const hasV = v => Array.isArray(v) ? v.length > 0 : (v !== undefined && v !== null && v !== "");
   const isAnswered = (iv, q) => { const a = iv.answers[q.id]; return !!a && (hasV(a.v) || !!(a.n && a.n.trim())); };
   const progress = iv => { const qs = profQs(PROF[iv.profile]); return [qs.filter(q => isAnswered(iv, q)).length, qs.length]; };
@@ -103,7 +103,7 @@
 
   /* ---------- shell ---------- */
   const app = $("#app");
-  let cur = null, tick = null, saveT = null, keysOnly = false, insFilter = "all";
+  let cur = null, tick = null, saveT = null, insFilter = "all";
 
   function shell(route) {
     document.documentElement.lang = lang;
@@ -133,7 +133,7 @@
         <div class="prof-h"><span class="ico">${p.icon}</span><h3>${L(p.n)}</h3></div>
         <p class="muted">${L(p.who)}</p>
         <p><b>${t("goal")} :</b> ${L(p.goal)}</p>
-        <p class="tags"><span>⏱ ${p.dur} ${t("min")}</span><span>${profQs(p).length} ${t("questions")}</span>${n ? `<span class="ok">${n} ${t("done_n")}</span>` : ""}</p>
+        <p class="tags"><span>⏱ ${p.dur} ${t("min")}</span><span>${askCount(p)} ${t("questions")}</span>${n ? `<span class="ok">${n} ${t("done_n")}</span>` : ""}</p>
         <div class="row"><button class="btn" data-act="start" data-id="${p.id}">${t("start")}</button><a class="btn ghost" href="#/guide/${p.id}">${t("preview")}</a></div>
       </article>`;
     }).join("");
@@ -157,9 +157,9 @@
   }
   function qHTML(q, a, n, readonly) {
     const opts = readonly && q.o ? `<p class="q-opts">${q.o.map(o => `<span>${L(o)}</span>`).join("")}</p>` : "";
-    return `<div class="q${q.key ? " key" : ""}" data-q="${q.id}">
+    return `<div class="q" data-q="${q.id}">
       <div class="q-head"><span class="q-num">${n}</span><div>
-        <p class="q-text">${L(q.t)}${q.key ? ` <span class="badge">${t("key_badge")}</span>` : ""}</p>
+        <p class="q-text">${L(q.t)}</p>
         ${q.h ? `<p class="q-hint">↳ ${L(q.h)}</p>` : ""}</div></div>
       ${readonly ? opts : inputHTML(q, a) + (q.type === "text" ? "" : `<textarea data-note rows="1" placeholder="${t("notes")}" aria-label="${t("notes")}">${esc(a.n)}</textarea>`)}
     </div>`;
@@ -184,7 +184,7 @@
   }
 
   /* ---------- interview ---------- */
-  const META = [["name", "text"], ["role", "text"], ["company", "text"], ["sector", "text"], ["size", "number"], ["wilaya", "text"], ["date", "date"], ["mode", "select"], ["team", "text"], ["contact", "text"]];
+  const META = [["name", "text"], ["role", "text"], ["company", "text"], ["size", "number"], ["wilaya", "text"], ["date", "date"], ["contact", "text"]];
   function vInterview(id) {
     const iv = DB.find(x => x.id === id); if (!iv) return `<p class="empty">${t("notfound")}</p>`;
     cur = iv; const p = PROF[iv.profile];
@@ -192,17 +192,15 @@
       ? `<select data-meta="${k}">${UI.mode_o.map((o, i) => `<option value="${i}"${String(iv.meta[k]) === String(i) ? " selected" : ""}>${L(o)}</option>`).join("")}</select>`
       : `<input type="${ty}" data-meta="${k}" value="${esc(iv.meta[k])}"${ty === "number" ? ' min="1" inputmode="numeric"' : ""}>`}</label>`).join("");
     const secNav = p.sections.map((s, i) => s.pitch ? `<button class="chip pitchchip" data-act="scroll" data-id="pitch">📣</button>` : `<button class="chip" data-act="scroll" data-id="sec${i}">${L(s.t)}</button>`).join("");
-    return `<div class="bar noprint${keysOnly ? " keys" : ""}" id="bar">
+    return `<div class="bar noprint" id="bar">
         <div class="bar-l"><b id="who">${esc(who(iv))}</b><span class="muted">${p.icon} ${L(p.n)}</span></div>
         <div class="bar-r"><button class="btn ghost sm" data-act="timer" id="timer" aria-label="Timer">⏱ 00:00</button>
           <span id="prog" class="muted"></span><span id="saved" class="saved"></span></div>
         <div class="progress"><i id="progbar"></i></div>
         <div class="secnav">${secNav}</div>
       </div>
-      <div class="iv${keysOnly ? " keys-only" : ""}" id="iv">
-      <div class="row noprint"><button class="btn ghost sm" data-act="keys">${keysOnly ? t("keys_off") : t("keys_on")}</button>
-        <a class="btn ghost sm" href="#/report/${iv.id}">${t("report")}</a></div>
-      <details class="card meta"${iv.meta.name ? "" : " open"}><summary>${t("meta")}</summary><div class="form">${meta}</div></details>
+      <div class="iv" id="iv">
+      <details class="card meta"><summary>${t("meta")}</summary><div class="form">${meta}</div></details>
       ${consentHTML(p)}${sectionsHTML(p, iv).replace('<aside class="pitch">', '<aside class="pitch" id="pitch">')}
       <div class="row end noprint"><button class="btn" data-act="finish">${t("finish")} ✓</button></div></div>`;
   }
@@ -263,7 +261,7 @@
       ${items || `<p class="empty">${t("none_yet")}</p>`}`;
   }
   function exportCsv() {
-    const qs = Object.values(Q), cell = x => '"' + String(x == null ? "" : x).replace(/"/g, '""') + '"';
+    const qs = USED, cell = x => '"' + String(x == null ? "" : x).replace(/"/g, '""') + '"';
     const head = ["id", "profile", "status", "minutes"].concat(META.map(m => m[0]), qs.flatMap(q => q.type === "text" ? [q.id] : [q.id, q.id + "_notes"]));
     const lines = DB.map(iv => [iv.id, L(PROF[iv.profile].n), iv.status, Math.round((iv.elapsed || 0) / 60)]
       .concat(META.map(([k]) => k === "mode" ? L(UI.mode_o[iv.meta[k]] || "") : iv.meta[k]),
@@ -293,17 +291,17 @@
   function vInsights() {
     const set = DB.filter(i => insFilter === "all" || i.profile === insFilter);
     const vals = id => set.map(i => i.answers[id] && i.answers[id].v).filter(hasV);
-    const kInt = vals("o_reaction"), kW = vals("o_wtp"), kP = vals("o_pilot");
+    const kI = vals("p_incident"), kW = vals("o_price_fair"), kP = vals("o_pilot");
     const kpi = (k, v) => `<div class="kpi"><b>${v}</b><span>${t(k)}</span></div>`;
     const kpis = kpi("k_total", set.length) + kpi("k_done", set.filter(i => i.status === "done").length)
-      + kpi("k_int", kInt.length ? (kInt.reduce((a, b) => a + b, 0) / kInt.length).toFixed(1) + " / 5" : "–")
-      + kpi("k_wtp", kW.length ? fmt(median(kW)) + " DA" : "–")
+      + kpi("k_int", kI.length ? kI.filter(v => v === "y").length + " / " + kI.length : "–")
+      + kpi("k_wtp", kW.length ? kW.filter(Q.o_price_fair.sup).length + " / " + kW.length : "–")
       + kpi("k_pilot", kP.length ? kP.filter(v => v === "y").length + " / " + kP.length : "–")
       + kpi("k_strong", vals("d_signal").filter(v => v === 0).length);
 
     const hyps = HYPS.map(h => {
       let tot = 0, sup = 0;
-      Object.values(Q).filter(q => q.hyp === h.id).forEach(q => vals(q.id).forEach(v => { tot++; if (q.sup(v)) sup++; }));
+      USED.forEach(q => { const f = q.hyp === h.id ? q.sup : q.hyps && q.hyps[h.id]; if (f) vals(q.id).forEach(v => { tot++; if (f(v)) sup++; }); });
       const pct = tot ? Math.round(100 * sup / tot) : 0;
       const verdict = tot < 5 ? ["few", "v_few"] : pct >= 60 ? ["ok", "v_ok"] : pct <= 40 ? ["no", "v_no"] : ["mix", "v_mix"];
       return `<div class="hyp"><div class="hyp-h"><span><b>${h.id}</b> ${L(h.t)}</span><span class="verdict ${verdict[0]}">${t(verdict[1])}</span></div>
@@ -388,7 +386,7 @@
   const acts = {
     lang() { lang = lang === "fr" ? "en" : "fr"; store.set(LSL, lang); render(); },
     start(b) {
-      const iv = { id: "iv" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), profile: b.dataset.id, status: "draft", meta: { date: today(), mode: 0 }, answers: {}, elapsed: 0, created: Date.now(), updated: Date.now() };
+      const iv = { id: "iv" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), profile: b.dataset.id, status: "draft", meta: { date: today() }, answers: {}, elapsed: 0, created: Date.now(), updated: Date.now() };
       DB.push(iv); persist(); location.hash = "#/interview/" + iv.id;
     },
     opt(b) {
@@ -400,7 +398,6 @@
       touch(); updateProgress();
     },
     scroll(b) { const el = document.getElementById(b.dataset.id); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); },
-    keys() { keysOnly = !keysOnly; const id = cur.id; flush(); app.innerHTML = vInterview(id); updateProgress(); drawTimer(); },
     timer() {
       if (tick) { clearInterval(tick); tick = null; touch(); }
       else tick = setInterval(() => { cur.elapsed = (cur.elapsed || 0) + 1; drawTimer(); if (cur.elapsed % 15 === 0) touch(); }, 1000);

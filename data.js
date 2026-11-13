@@ -9,7 +9,7 @@
 
   /* ---------- Context ---------- */
   q("c_role", "text", "seg", "Pouvez-vous présenter votre entreprise et votre rôle ?", "Can you describe your company and your role?",
-    { key: 1, h: ["Activité, nombre d'employés, nombre de sites, clients principaux.", "Activity, headcount, number of sites, main customers."] });
+    { h: ["Activité, effectif, nombre de postes et de serveurs, qui gère l'informatique.", "Activity, headcount, number of endpoints and servers, who runs IT."] });
   q("c_it_dep", "scale", "seg", "À quel point votre activité dépend-elle de l'informatique ?", "How much does your business depend on IT?",
     { h: ["1 = on peut travailler sans · 5 = tout s'arrête sans informatique.", "1 = we can work without it · 5 = everything stops without IT."] });
   q("c_it_who", "single", "seg", "Qui gère l'informatique et la sécurité aujourd'hui ?", "Who manages IT and security today?",
@@ -19,7 +19,7 @@
 
   /* ---------- Problem (past facts, no pitch) ---------- */
   q("p_incident", "yn", "vp", "Avez-vous subi un incident de sécurité ces 24 derniers mois ?", "Have you had a security incident in the last 24 months?",
-    { key: 1, hyp: "H2", sup: v => v === "y", h: ["Phishing, virus, ransomware, site piraté, compte volé, fraude, fuite de données.", "Phishing, malware, ransomware, hacked website, stolen account, fraud, data leak."] });
+    { key: 1, hyp: "H2", sup: v => v === "y", h: ["Phishing, virus, ransomware, site piraté, fraude. Si oui : que s'est-il passé, combien de temps, combien cela a-t-il coûté ? Notez le récit.", "Phishing, malware, ransomware, hacked site, fraud. If yes: what happened, how long, what did it cost? Write the story down."] });
   q("p_incident_story", "text", "vp", "Racontez le dernier incident : que s'est-il passé ?", "Tell us about the last incident: what happened?",
     { key: 1, h: ["Comment l'avez-vous découvert ? Après combien de temps ? Qui a réagi ? Combien cela a-t-il coûté ? Qu'avez-vous changé ensuite ?", "How did you find out? After how long? Who reacted? What did it cost? What did you change afterwards?"] });
   q("p_fear", "multi", "vp", "Quelles menaces vous inquiètent le plus ?", "Which threats worry you most?",
@@ -53,22 +53,27 @@
   q("r_compliance", "multi", "vp", "Quelles obligations réglementaires ou normes vous concernent ?", "Which regulations or standards apply to you?",
     { o: [["Loi 18-07 (données personnelles)", "Law 18-07 (personal data)"], ["Décret 20-05 / référentiel ASSI", "Decree 20-05 / ASSI framework"], ["Règles Banque d'Algérie", "Banque d'Algérie rules"], ["ISO 27001", "ISO 27001"], ["PCI DSS", "PCI DSS"], ["Exigences de clients / donneurs d'ordre", "Customer / contractor requirements"], ["Aucune", "None"], ["Je ne sais pas", "I don't know"]] });
 
+  q("r_matters", "multi", "vp", "Qu'est-ce qui compterait vraiment pour vous dans un tel service ?", "What would really matter to you in such a service?",
+    { hyps: { H4: v => v.includes(0), H5: v => v.includes(1), H6: v => v.includes(2) },
+      h: ["Laissez-les répondre spontanément, puis cochez. Ne lisez la liste que s'ils hésitent.", "Let them answer spontaneously, then tick. Read the list only if they hesitate."],
+      o: [["Données hébergées en Algérie", "Data hosted in Algeria"], ["Paiement en DA sur facture locale", "Payment in DA with a local invoice"], ["Rapports en français ou en arabe", "Reports in French or Arabic"], ["Alertes sur WhatsApp / SMS", "Alerts on WhatsApp / SMS"], ["Prix publics, sans devis", "Public prices, no quote"], ["Pas d'engagement long", "No long commitment"], ["Un analyste dédié", "A dedicated analyst"], ["Aide à la conformité", "Compliance help"]] });
+
   /* ---------- Offer reaction (after the pitch) ---------- */
   q("o_reaction", "scale", "vp", "Après présentation : quel est votre intérêt pour cette offre ?", "After the pitch: how interested are you in this offer?",
     { key: 1, h: ["1 = aucun · 5 = je veux commencer. Notez la première réaction spontanée, mot pour mot.", "1 = none · 5 = I want to start. Write down the first spontaneous reaction, word for word."] });
   q("o_services", "multi", "vp", "Quels services vous intéressent le plus ?", "Which services interest you most?",
     { key: 1, o: [["Surveillance de base (SIEM + EDR + alertes)", "Core monitoring (SIEM + EDR + alerts)"], ["Analystes 24/7", "24/7 analysts"], ["Réponse active (isoler, bloquer)", "Active response (isolate, block)"], ["Threat hunting", "Threat hunting"], ["Heures de réponse à incident", "Incident response hours"], ["Surveillance dark web / fuites .dz", "Dark web / .dz leak monitoring"], ["Rapports de conformité algériens", "Algerian compliance reports"], ["Analyste dédié nommé", "Dedicated named analyst"], ["Surveillance du site web", "Website monitoring"], ["Fraude e-paiement (CIB/Edahabia)", "E-payment fraud (CIB/Edahabia)"], ["Simulation de phishing + formation", "Phishing simulation + training"], ["Test de préparation ransomware", "Ransomware readiness check"], ["Pentest léger", "Light pentest"]] });
   q("o_price_fair", "single", "rev", "Le prix calculé pour votre taille vous semble :", "The price computed for your size seems:",
-    { key: 1, hyp: "H7", sup: v => v === 1 || v === 2, h: ["Montrez le simulateur de prix avec leur nombre d'utilisateurs avant de poser la question.", "Show the price simulator with their number of users before asking."],
+    { key: 1, hyp: "H7", sup: v => v === 1 || v === 2, h: ["Montrez d'abord le simulateur avec leur nombre d'utilisateurs. Notez ensuite le budget mensuel qu'ils jugeraient acceptable.", "Show the simulator with their number of users first. Then note the monthly budget they would find acceptable."],
       o: [["Tellement bas que je doute de la qualité", "So low I doubt the quality"], ["Une bonne affaire", "A good deal"], ["Correct", "Fair"], ["Cher, à réfléchir", "Expensive, needs thought"], ["Trop cher, hors de question", "Too expensive, out of the question"]] });
   q("o_wtp", "num", "rev", "Quel budget mensuel maximum seriez-vous prêt à y consacrer ?", "What is the maximum monthly budget you would spend on it?",
     { unit: "DA", h: ["Laissez-les donner un chiffre, ne proposez pas le vôtre.", "Let them name a figure, do not suggest yours."] });
   q("o_model", "single", "rev", "Quel mode de tarification préférez-vous ?", "Which pricing model do you prefer?",
     { o: [["Par utilisateur, services à la carte", "Per user, services à la carte"], ["Packs fixes (Bronze / Argent / Or)", "Fixed packs (Bronze / Silver / Gold)"], ["Forfait annuel négocié", "Negotiated yearly flat fee"], ["Sur devis", "On quote"]] });
   q("o_trust", "multi", "risk", "Qu'est-ce qui vous donnerait confiance dans un nouveau prestataire algérien ?", "What would make you trust a new Algerian provider?",
-    { key: 1, hyp: "H8", sup: v => v.includes(0), o: [["Pilote gratuit de 30 jours", "Free 30-day pilot"], ["Références clients", "Customer references"], ["Certification ISO 27001", "ISO 27001 certification"], ["Agrément / reconnaissance officielle", "Official approval / recognition"], ["Partenariat universitaire", "University partnership"], ["Contrat avec SLA et pénalités", "Contract with SLA and penalties"], ["Visite du SOC", "Visiting the SOC"], ["Accord de confidentialité (NDA)", "Non-disclosure agreement"]] });
+    { key: 1, o: [["Pilote gratuit de 30 jours", "Free 30-day pilot"], ["Références clients", "Customer references"], ["Certification ISO 27001", "ISO 27001 certification"], ["Agrément / reconnaissance officielle", "Official approval / recognition"], ["Partenariat universitaire", "University partnership"], ["Contrat avec SLA et pénalités", "Contract with SLA and penalties"], ["Visite du SOC", "Visiting the SOC"], ["Accord de confidentialité (NDA)", "Non-disclosure agreement"]] });
   q("o_pilot", "yn", "ch", "Accepteriez-vous un pilote gratuit de 30 jours dans les prochains mois ?", "Would you accept a free 30-day pilot in the coming months?",
-    { key: 1, h: ["Un vrai oui = une date ou un contact technique. Sinon, notez « oui poli ».", "A real yes = a date or a technical contact. Otherwise write « polite yes »."] });
+    { key: 1, hyp: "H8", sup: v => v === "y", h: ["Un vrai oui = une date ou un contact technique. Sinon, notez « oui poli ».", "A real yes = a date or a technical contact. Otherwise write « polite yes »."] });
   q("o_decider", "text", "ch", "Qui décide de ce type d'achat et comment se passe le processus ?", "Who decides on this kind of purchase, and what is the process?",
     { h: ["Signataire, délais, consultation ou appel d'offres, période budgétaire.", "Signatory, lead time, tender or consultation, budget period."] });
   q("o_channels", "multi", "ch", "Comment trouvez-vous habituellement vos prestataires informatiques ?", "How do you usually find your IT providers?",
@@ -140,7 +145,8 @@
     { h: ["Stockage des logs, hébergement, astreintes, support, intégration de chaque client.", "Log storage, hosting, on-call, support, onboarding each client."] });
   q("x_reg", "text", "risk", "Quelles autorisations ou contraintes réglementaires devons-nous anticiper ?", "Which authorisations or regulatory constraints should we anticipate?");
   q("x_mvp", "text", "act", "Si vous étiez à notre place, que construiriez-vous en premier ?", "In our place, what would you build first?", { key: 1 });
-  q("x_advisor", "yn", "par", "Accepteriez-vous de nous suivre comme mentor ou de relire nos livrables ?", "Would you agree to mentor us or review our deliverables?");
+  q("x_advisor", "yn", "par", "Accepteriez-vous de nous suivre comme mentor ou de relire nos livrables ?", "Would you agree to mentor us or review our deliverables?",
+    { h: ["Et qui d'autre devrions-nous rencontrer ?", "And who else should we meet?"] });
 
   /* ---------- Academic / post-graduate ---------- */
   q("a_bg", "text", "par", "Quel est votre parcours et votre domaine de recherche ou de spécialité ?", "What is your background and research or speciality area?", { key: 1 });
@@ -209,117 +215,94 @@
   q("l_timeline", "text", "risk", "Combien de temps prévoir pour être en règle avant le premier client ?", "How long should we plan to be compliant before the first customer?");
 
   /* ---------- Debrief (team only, right after the meeting) ---------- */
-  q("d_takeaways", "text", "seg", "Les 3 choses à retenir de cet entretien", "The 3 things to remember from this interview", { key: 1 });
+  q("d_takeaways", "text", "seg", "À retenir : 3 points et les citations exactes", "To remember: 3 points and the exact quotes", { key: 1 });
   q("d_quotes", "text", "vp", "Citations exactes à réutiliser dans le rapport", "Exact quotes to reuse in the report", { key: 1 });
   q("d_surprise", "text", "risk", "Ce qui nous a surpris ou contredit nos hypothèses", "What surprised us or contradicted our assumptions");
   q("d_signal", "single", "seg", "Niveau du signal", "Signal strength",
     { key: 1, o: [["Fort : besoin réel + prêt à avancer", "Strong: real need + ready to move"], ["Moyen : intéressé, sans urgence", "Medium: interested, no urgency"], ["Faible : politesse, pas de besoin", "Weak: polite, no need"]] });
   q("d_next", "text", "ch", "Prochaines actions (qui, quoi, quand)", "Next actions (who, what, when)", { key: 1 });
 
-  /* ---------- Pitches ---------- */
+  /* ---------- Pitches (two sentences, no more) ---------- */
   const PITCH_CLIENT = [
-    "Nous préparons un centre de surveillance de sécurité (SOC) 24/7, hébergé en Algérie et opéré par des analystes algériens. Vous choisissez les services dont vous avez besoin et vous payez chaque mois en DA, à des prix publics, à partir de 15 000 DA. Vous recevez les alertes critiques sur WhatsApp, Telegram ou SMS, et les rapports en français ou en arabe.",
-    "We are building a 24/7 security operations centre (SOC), hosted in Algeria and run by Algerian analysts. You pick the services you need and pay monthly in DA, at public prices, from 15,000 DA. Critical alerts reach you on WhatsApp, Telegram or SMS, and reports come in French or Arabic."];
+    "Nous préparons un service de surveillance de sécurité 24/7, hébergé en Algérie et assuré par des analystes algériens. L'abonnement est mensuel, en DA, à prix publics à partir de 15 000 DA, avec des alertes sur WhatsApp et des rapports en français ou en arabe.",
+    "We are preparing a 24/7 security monitoring service, hosted in Algeria and run by Algerian analysts. It is a monthly subscription in DA at public prices from 15,000 DA, with alerts on WhatsApp and reports in French or Arabic."];
   const PITCH_REVIEW = [
-    "Notre projet de fin d'études : un SOC as a Service 24/7, hébergé en Algérie, opéré par des analystes algériens, vendu par abonnement mensuel en DA à prix publics. Pile open source (Wazuh, Suricata, MISP, TheHive, Shuffle), flux de menaces local .dz, rapports en arabe et français, alertes WhatsApp / Telegram / SMS. Cible : les entreprises de 10 à 250 utilisateurs que personne ne couvre aujourd'hui.",
-    "Our final-year project: a 24/7 SOC as a Service, hosted in Algeria, run by Algerian analysts, sold by monthly subscription in DA at public prices. Open-source stack (Wazuh, Suricata, MISP, TheHive, Shuffle), local .dz threat feed, reports in Arabic and French, WhatsApp / Telegram / SMS alerts. Target: companies with 10 to 250 users that nobody covers today."];
+    "Notre projet de fin d'études : un SOC as a Service 24/7 hébergé en Algérie, vendu par abonnement mensuel en DA à prix publics, pour les entreprises de 10 à 250 utilisateurs. Il repose sur une pile open source (Wazuh, Suricata, MISP, TheHive, Shuffle) et un flux de menaces local .dz.",
+    "Our final-year project: a 24/7 SOC as a Service hosted in Algeria, sold by monthly subscription in DA at public prices, for companies with 10 to 250 users. It runs on an open-source stack (Wazuh, Suricata, MISP, TheHive, Shuffle) and a local .dz threat feed."];
 
-  const S = (fr, en, qs, note) => ({ t: [fr, en], qs, note });
+  /* Each guide is deliberately short: 6 to 9 questions for the interviewee, mostly one-tap answers.
+     Every other question defined above is a reserve: add its id to a list below to use it. */
+  const S = (fr, en, qs, extra) => Object.assign({ t: [fr, en], qs }, extra || {});
   const pitchC = { pitch: PITCH_CLIENT, sim: true };
   const pitchR = { pitch: PITCH_REVIEW };
-  const debrief = S("Débrief (équipe, juste après)", "Debrief (team, right after)", ["d_takeaways", "d_quotes", "d_surprise", "d_signal", "d_next"],
-    ["À remplir dans les 30 minutes qui suivent, sans l'interlocuteur.", "Fill in within 30 minutes of leaving, without the interviewee."]);
+  const debrief = S("Débrief (équipe, après la réunion)", "Debrief (team, after the meeting)", ["d_takeaways", "d_signal", "d_next"],
+    { team: true, note: ["À remplir entre vous, sans l'interlocuteur.", "Fill in among yourselves, without the interviewee."] });
+  const SIT = ["Leur situation", "Their situation"], OFF = ["Notre offre", "Our offer"];
 
   const PROFILES = [
     { id: "owner", icon: "🏢", n: ["Dirigeant de PME", "SME owner / manager"],
       who: ["Gérant, DG ou directeur financier d'une entreprise de 10 à 250 personnes.", "Owner, CEO or finance director of a 10 to 250-person company."],
-      goal: ["Prouver que le problème existe, mesurer le budget et les freins à l'achat.", "Prove the problem exists, measure budget and buying barriers."], dur: 35,
+      goal: ["Prouver que le problème existe et mesurer les freins à l'achat.", "Prove the problem exists and measure buying barriers."], dur: 12,
       sections: [
-        S("Contexte", "Context", ["c_role", "c_it_dep", "c_it_who", "c_downtime"]),
-        S("Problème vécu", "Lived problem", ["p_incident", "p_incident_story", "p_fear", "p_detect", "p_priority"]),
-        S("Solutions actuelles", "Current solutions", ["s_tools", "s_spend", "s_providers", "s_soc_considered", "s_soc_blockers"]),
-        S("Attentes", "Requirements", ["r_hosting", "r_dzd", "r_lang", "r_alert_channel", "r_compliance"]),
+        S(SIT[0], SIT[1], ["c_role", "p_incident", "p_detect", "s_soc_blockers"]),
         pitchC,
-        S("Réaction à l'offre", "Reaction to the offer", ["o_reaction", "o_services", "o_price_fair", "o_wtp", "o_model", "o_trust", "o_pilot"]),
-        S("Décision d'achat", "Buying decision", ["o_decider", "o_channels", "o_refer"]), debrief] },
+        S(OFF[0], OFF[1], ["r_matters", "o_services", "o_price_fair", "o_pilot", "o_refer"]), debrief] },
     { id: "it", icon: "🖥️", n: ["Responsable informatique", "IT manager / sysadmin"],
       who: ["La personne qui gère les postes, les serveurs et le réseau au quotidien.", "The person running endpoints, servers and network day to day."],
-      goal: ["Évaluer la posture de sécurité réelle et la faisabilité technique chez le client.", "Assess the real security posture and technical feasibility on the client side."], dur: 40,
+      goal: ["Évaluer la posture de sécurité réelle et la faisabilité technique.", "Assess the real security posture and technical feasibility."], dur: 12,
       sections: [
-        S("Contexte", "Context", ["c_role", "c_it_who", "t_assets", "t_infra"]),
-        S("Posture actuelle", "Current posture", ["s_tools", "t_logs", "t_backup", "t_time"]),
-        S("Problème vécu", "Lived problem", ["p_incident", "p_incident_story", "p_fear", "p_detect"]),
-        S("Solutions envisagées", "Solutions considered", ["s_providers", "s_soc_considered", "s_soc_blockers"]),
+        S(SIT[0], SIT[1], ["c_role", "s_tools", "t_logs", "p_incident", "p_detect"]),
         pitchC,
-        S("Intégration technique", "Technical integration", ["t_agent", "t_active", "t_concerns", "r_hosting", "r_alert_channel"]),
-        S("Réaction à l'offre", "Reaction to the offer", ["o_reaction", "o_services", "o_price_fair", "o_trust", "o_pilot"]),
-        S("Décision d'achat", "Buying decision", ["o_decider", "o_refer"]), debrief] },
+        S(OFF[0], OFF[1], ["t_agent", "o_services", "o_pilot", "o_refer"]), debrief] },
     { id: "ciso", icon: "🏦", n: ["RSSI — banque, grand compte, organisme public", "CISO — bank, large account, public body"],
       who: ["Responsable sécurité d'une organisation réglementée ou de plus de 250 utilisateurs.", "Security lead at a regulated organisation or one with over 250 users."],
-      goal: ["Comprendre les exigences réglementaires, la concurrence et les conditions d'entrée.", "Understand regulatory requirements, competition and entry conditions."], dur: 45,
+      goal: ["Comprendre les exigences réglementaires et les conditions d'entrée.", "Understand regulatory requirements and entry conditions."], dur: 15,
       sections: [
-        S("Contexte", "Context", ["c_role", "g_soc_current", "g_soc_pain"]),
-        S("Incidents et menaces", "Incidents and threats", ["p_incident", "p_incident_story", "p_fear", "p_detect"]),
-        S("Conformité", "Compliance", ["r_compliance", "g_audit", "r_hosting", "g_requirements"]),
+        S(SIT[0], SIT[1], ["g_soc_current", "g_soc_pain", "p_incident", "r_compliance"]),
         pitchC,
-        S("Réaction à l'offre", "Reaction to the offer", ["o_reaction", "g_hybrid", "o_services", "g_ti", "o_trust"]),
-        S("Achats", "Procurement", ["g_procurement", "s_providers", "o_refer"]), debrief] },
+        S(OFF[0], OFF[1], ["g_requirements", "g_hybrid", "g_procurement", "o_refer"]), debrief] },
     { id: "ecom", icon: "🛒", n: ["Fondateur e-commerce / startup", "E-commerce / startup founder"],
       who: ["Fondateur ou CTO d'une boutique en ligne, fintech ou application avec paiement.", "Founder or CTO of an online shop, fintech or app with payments."],
-      goal: ["Tester les services web et fraude e-paiement, et la sensibilité au prix des petites structures.", "Test the website and e-payment fraud services, and price sensitivity of small teams."], dur: 30,
+      goal: ["Tester les services web et fraude, et la sensibilité au prix des petites structures.", "Test the website and fraud services, and price sensitivity of small teams."], dur: 12,
       sections: [
-        S("Contexte", "Context", ["c_role", "c_it_who", "e_pay", "e_host"]),
-        S("Problème vécu", "Lived problem", ["p_incident", "p_incident_story", "e_fraud", "e_down", "p_fear", "p_detect"]),
-        S("Solutions actuelles", "Current solutions", ["s_tools", "s_spend", "s_soc_considered", "s_soc_blockers"]),
-        S("Attentes", "Requirements", ["r_dzd", "r_lang", "r_alert_channel"]),
+        S(SIT[0], SIT[1], ["c_role", "p_incident", "e_fraud", "p_detect"]),
         pitchC,
-        S("Réaction à l'offre", "Reaction to the offer", ["o_reaction", "o_services", "e_web_interest", "e_fraud_interest", "o_price_fair", "o_wtp", "o_trust", "o_pilot"]),
-        S("Décision d'achat", "Buying decision", ["o_channels", "o_refer"]), debrief] },
+        S(OFF[0], OFF[1], ["r_matters", "o_services", "o_price_fair", "o_pilot", "o_refer"]), debrief] },
     { id: "expert", icon: "🛡️", n: ["Expert cybersécurité / praticien SOC", "Cybersecurity expert / SOC practitioner"],
       who: ["Analyste, architecte ou responsable SOC, consultant expérimenté.", "Analyst, architect or SOC lead, experienced consultant."],
-      goal: ["Faire critiquer l'architecture, la pile technique, les effectifs et les prix.", "Get the architecture, stack, staffing and prices challenged."], dur: 45,
+      goal: ["Faire critiquer l'architecture, la pile technique, les effectifs et les prix.", "Get the architecture, stack, staffing and prices challenged."], dur: 15,
       sections: [
-        S("Parcours et marché", "Background and market", ["x_bg", "x_market", "x_demand"]),
+        S("Le marché", "The market", ["x_market"]),
         pitchR,
-        S("Revue technique", "Technical review", ["x_arch", "x_stack", "x_staff", "x_pitfalls"]),
-        S("Offre et prix", "Offer and pricing", ["x_diff", "x_pricing", "x_cost"]),
-        S("Risques et priorités", "Risks and priorities", ["x_reg", "x_mvp"]),
-        S("Suite", "Follow-up", ["x_advisor", "o_refer"]), debrief] },
+        S("Votre avis", "Your view", ["x_arch", "x_stack", "x_staff", "x_pricing", "x_pitfalls", "x_mvp", "x_advisor"]), debrief] },
     { id: "academic", icon: "🎓", n: ["Doctorant / enseignant-chercheur", "Post-graduate student / academic"],
       who: ["Doctorants, étudiants de master et enseignants en sécurité informatique.", "PhD and master's students, and lecturers in IT security."],
-      goal: ["Faire relire le projet et valider le vivier d'analystes et les partenariats universitaires.", "Get the project reviewed and validate the analyst pipeline and university partnerships."], dur: 30,
+      goal: ["Faire relire le projet et valider le vivier d'analystes.", "Get the project reviewed and validate the analyst pipeline."], dur: 10,
       sections: [
-        S("Parcours", "Background", ["a_bg", "a_skills"]),
         pitchR,
-        S("Revue du projet", "Project review", ["a_review", "a_feasible", "x_stack", "a_research"]),
-        S("Vivier d'analystes", "Analyst pipeline", ["a_analyst", "a_shifts", "a_salary", "a_training"]),
-        S("Partenariat", "Partnership", ["a_partner", "o_refer"]), debrief] },
+        S("Votre avis", "Your view", ["a_review", "a_feasible"]),
+        S("Travailler dans un SOC", "Working in a SOC", ["a_analyst", "a_salary", "a_training", "a_partner", "o_refer"]), debrief] },
     { id: "incubator", icon: "🚀", n: ["Incubateur / accélérateur", "Incubator / accelerator"],
       who: ["Responsable de programme, chargé d'accompagnement, mentor business.", "Programme manager, startup coach, business mentor."],
-      goal: ["Connaître les critères de sélection et ce qui manque au dossier.", "Learn the selection criteria and what the application is missing."], dur: 30,
+      goal: ["Connaître les critères de sélection et ce qui manque au dossier.", "Learn the selection criteria and what the application is missing."], dur: 10,
       sections: [
-        S("Le programme", "The programme", ["i_program", "i_offer", "i_criteria"]),
+        S("Le programme", "The programme", ["i_program", "i_criteria"]),
         pitchR,
-        S("Avis sur le projet", "Opinion on the project", ["i_fit", "i_weak", "i_bmc", "i_proof"]),
-        S("Financement et suite", "Funding and next steps", ["i_funding", "i_next", "o_refer"]), debrief] },
+        S("Votre avis", "Your view", ["i_fit", "i_weak", "i_proof", "i_next"]), debrief] },
     { id: "partner", icon: "🤝", n: ["Intégrateur / prestataire / hébergeur", "Integrator / provider / hosting company"],
       who: ["Intégrateur IT, société d'infogérance, hébergeur ou acteur sécurité déjà en place.", "IT integrator, managed-service company, hosting provider or existing security player."],
-      goal: ["Comprendre les prix réels du marché et tester un canal de vente indirect.", "Understand real market prices and test an indirect sales channel."], dur: 35,
+      goal: ["Comprendre les prix réels du marché et tester un canal de vente indirect.", "Understand real market prices and test an indirect sales channel."], dur: 10,
       sections: [
-        S("Contexte", "Context", ["m_bg", "m_services", "m_demand"]),
-        S("Marché", "Market", ["m_why", "m_price", "x_demand"]),
+        S("Le marché", "The market", ["m_services", "m_demand", "m_price"]),
         pitchR,
-        S("Avis et partenariat", "Opinion and partnership", ["m_view", "x_diff", "m_partner", "m_terms", "m_hosting"]),
-        S("Suite", "Follow-up", ["o_refer"]), debrief] },
+        S("Travailler ensemble", "Working together", ["m_view", "m_partner", "o_refer"]), debrief] },
     { id: "legal", icon: "⚖️", n: ["Juriste / expert conformité", "Legal / compliance expert"],
       who: ["Avocat, juriste du numérique, auditeur ou consultant conformité.", "Lawyer, digital-law specialist, auditor or compliance consultant."],
-      goal: ["Lever le risque réglementaire : loi 18-07, décret 20-05, autorisations, contrats.", "Clear the regulatory risk: Law 18-07, Decree 20-05, authorisations, contracts."], dur: 30,
+      goal: ["Lever le risque réglementaire : loi 18-07, autorisations, contrats.", "Clear the regulatory risk: Law 18-07, authorisations, contracts."], dur: 10,
       sections: [
-        S("Parcours", "Background", ["l_bg"]),
         pitchR,
-        S("Cadre légal", "Legal framework", ["l_1807", "l_auth", "l_2005", "l_hosting"]),
-        S("Contrats et rapports", "Contracts and reports", ["l_contract", "l_reports"]),
-        S("Risque et délais", "Risk and timeline", ["l_risk", "l_timeline", "o_refer"]), debrief] }
+        S("Cadre légal", "Legal framework", ["l_1807", "l_auth", "l_hosting"]),
+        S("En pratique", "In practice", ["l_contract", "l_risk", "l_timeline"]), debrief] }
   ];
 
   const HYPS = [
@@ -342,19 +325,16 @@
   ];
 
   const RULES = [
-    ["Parlez de leur vie, pas de votre idée. Le pitch vient après les questions sur le problème.", "Talk about their life, not your idea. The pitch comes after the problem questions."],
-    ["Demandez des faits passés (« la dernière fois que… »), pas des promesses (« est-ce que vous achèteriez… »).", "Ask about past facts (« the last time… »), not promises (« would you buy… »)."],
-    ["Écoutez 80 % du temps. Laissez les silences, relancez par « pourquoi ? » et « et ensuite ? ».", "Listen 80% of the time. Leave silences, follow up with « why? » and « and then? »."],
-    ["Notez les mots exacts. Une citation vaut plus qu'un résumé dans le rapport.", "Write down exact words. A quote is worth more than a summary in the report."],
-    ["Un compliment n'est pas une preuve. Une date, un contact ou un budget en est une.", "A compliment is not evidence. A date, a contact or a budget is."],
-    ["Venez à deux : une personne pose les questions, l'autre remplit la fiche.", "Go in pairs: one asks the questions, the other fills in the form."],
-    ["Terminez toujours par « qui d'autre devrions-nous rencontrer ? ».", "Always end with « who else should we meet? »."],
-    ["Remplissez le débrief dans les 30 minutes.", "Fill in the debrief within 30 minutes."]
+    ["Annoncez la durée au début et tenez-la. Si le temps est écoulé, arrêtez-vous et remerciez.", "Announce the duration at the start and keep to it. When time is up, stop and say thank you."],
+    ["Parlez de leur vie, pas de votre idée : le pitch vient après les questions sur leur situation.", "Talk about their life, not your idea: the pitch comes after the questions about their situation."],
+    ["Demandez des faits passés (« la dernière fois que… »), pas des promesses (« achèteriez-vous… »).", "Ask about past facts (« the last time… »), not promises (« would you buy… »)."],
+    ["Venez à deux : une personne parle, l'autre coche et note les mots exacts.", "Go in pairs: one talks, the other ticks and writes down exact words."],
+    ["Un compliment n'est pas une preuve. Une date, un contact ou un budget en est une.", "A compliment is not evidence. A date, a contact or a budget is."]
   ];
 
   const CONSENT = [
-    "Merci de nous recevoir. Nous sommes étudiants en fin de cycle et nous réalisons une étude de marché sur la cybersécurité des entreprises algériennes. L'entretien dure environ {d} minutes. Vos réponses restent confidentielles et seront anonymisées dans notre rapport. Nous ne vous demanderons aucun mot de passe ni détail technique sensible. Êtes-vous d'accord pour que nous prenions des notes ?",
-    "Thank you for meeting us. We are final-year students running a market study on cybersecurity in Algerian companies. The interview takes about {d} minutes. Your answers stay confidential and will be anonymised in our report. We will not ask for any password or sensitive technical detail. Are you fine with us taking notes?"];
+    "Merci de nous recevoir. Nous sommes étudiants et nous étudions la cybersécurité des entreprises algériennes. Cela prend {d} minutes, et vos réponses restent anonymes. On peut commencer ?",
+    "Thank you for meeting us. We are students studying cybersecurity in Algerian companies. It takes {d} minutes, and your answers stay anonymous. Shall we start?"];
 
   /* Pricing proposal from the project document (monthly, DA excl. tax). */
   const PRICING = {

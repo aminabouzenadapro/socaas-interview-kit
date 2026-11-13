@@ -4,8 +4,8 @@ Field-interview website for the market study of our final-year project: a 24/7 S
 
 ## What it does
 
-- **Guides**: one interview guide per profile we meet (SME owner, IT manager, CISO, e-commerce founder, cybersecurity expert, post-graduate / academic, incubator, integrator / provider, legal expert). French and English, switch with the button in the top bar.
-- **Interview form**: fill it in during the meeting. Tap-to-answer choices, a notes field on every question, a timer, a short mode that keeps only the must-ask questions, and autosave.
+- **Guides**: one short interview guide (6 to 9 questions, 10 to 15 minutes) per profile we meet (SME owner, IT manager, CISO, e-commerce founder, cybersecurity expert, post-graduate / academic, incubator, integrator / provider, legal expert). French and English, switch with the button in the top bar.
+- **Interview form**: fill it in during the meeting. Tap-to-answer choices, a notes field on every question, a timer, and autosave.
 - **Price simulator**: builds the monthly quote for the interviewee's number of users, to show before asking the pricing questions.
 - **Report**: a printable summary of each interview (Print / PDF).
 - **Insights**: hypothesis scoreboard (H1 to H8), answer distributions, and notes grouped by Business Model Canvas block.
@@ -28,4 +28,4 @@ Exports contain personal data. Do not commit them (the `.gitignore` already excl
 
 ## Editing the questions
 
-Everything is in `data.js`: questions, profiles, hypotheses, pitch texts and the pricing table. Each text is `[French, English]`.
+Everything is in `data.js`: questions, profiles, hypotheses, pitch texts and the pricing table. Each text is `[French, English]`. The guides are kept short on purpose; `data.js` also holds reserve questions that you can add to a profile by putting their id in its list.
