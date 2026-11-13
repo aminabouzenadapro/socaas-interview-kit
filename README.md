@@ -5,7 +5,7 @@ Field-interview website for the market study of our final-year project: a 24/7 S
 ## What it does
 
 - **Guides**: one short interview guide (6 to 9 questions, 10 to 15 minutes) per profile we meet (SME owner, IT manager, CISO, e-commerce founder, cybersecurity expert, post-graduate / academic, incubator, integrator / provider, legal expert). French and English, switch with the button in the top bar.
-- **Interview form**: fill it in during the meeting. Tap-to-answer choices, a notes field on every question, a timer, and autosave.
+- **Interview form**: fill it in during the meeting. Every question is a choice question, with an "Autre / Other" chip that opens a free-text field where useful, plus a notes field on every question, a timer, and autosave.
 - **Price simulator**: builds the monthly quote for the interviewee's number of users, to show before asking the pricing questions.
 - **Report**: a printable summary of each interview (Print / PDF).
 - **Insights**: hypothesis scoreboard (H1 to H8), answer distributions, and notes grouped by Business Model Canvas block.

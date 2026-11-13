@@ -14,6 +14,11 @@
   };
   let lang = store.get(LSL) === "en" ? "en" : "fr";
   let DB = (() => { try { return JSON.parse(store.get(LS)) || []; } catch (e) { return []; } })();
+  DB.forEach(iv => Object.keys(iv.answers || {}).forEach(id => {
+    const q = Q[id], a = iv.answers[id]; if (!q || !a || a.v === undefined || a.v === null) return;
+    const ok = q.type === "multi" ? Array.isArray(a.v) : (q.type === "single" || q.type === "scale" || q.type === "num") ? typeof a.v === "number" : q.type === "yn" ? ["y", "n", "u"].includes(a.v) : true;
+    if (!ok) { a.n = [String(a.v), a.n].filter(Boolean).join("\n"); delete a.v; }
+  }));
   const persist = () => store.set(LS, JSON.stringify(DB));
 
   const L = a => Array.isArray(a) ? a[lang === "fr" ? 0 : 1] : a;
@@ -26,7 +31,7 @@
     brand: ["Kit d'entretiens SOC", "SOC interview kit"],
     nav_home: ["Guides", "Guides"], nav_list: ["Entretiens", "Interviews"], nav_ins: ["Synthèse", "Insights"], nav_price: ["Simulateur de prix", "Price simulator"],
     hero_t: ["Étude de marché : entretiens terrain", "Market study: field interviews"],
-    hero_s: ["Des entretiens de 10 à 15 minutes : 6 à 9 questions par profil, presque toutes à cocher, et une synthèse qui alimente le Business Model Canvas.", "Interviews of 10 to 15 minutes: 6 to 9 questions per profile, almost all one-tap, and a summary that feeds the Business Model Canvas."],
+    hero_s: ["Des entretiens de 10 à 15 minutes : 6 à 9 questions par profil, toutes à cocher (avec « Autre » si besoin), et une synthèse qui alimente le Business Model Canvas.", "Interviews of 10 to 15 minutes: 6 to 9 questions per profile, all tick-the-box (with « Other » when needed), and a summary that feeds the Business Model Canvas."],
     start: ["Démarrer un entretien", "Start an interview"], preview: ["Voir le guide", "View the guide"],
     min: ["min", "min"], questions: ["questions", "questions"], done_n: ["réalisés", "done"],
     rules: ["Règles d'or de l'entretien", "Golden rules of interviewing"],
@@ -41,6 +46,7 @@
     m_team: ["Intervieweurs", "Interviewers"], m_contact: ["Contact (tél. / e-mail)", "Contact (phone / email)"],
     mode_o: [["En personne", "In person"], ["En ligne", "Online"], ["Téléphone", "Phone"]],
     notes: ["Notes, citations…", "Notes, quotes…"], answer: ["Réponse…", "Answer…"],
+    other: ["Autre", "Other"], other_ph: ["Précisez…", "Specify…"],
     yes: ["Oui", "Yes"], no: ["Non", "No"], unk: ["Ne sait pas", "Doesn't know"],
     saved: ["Enregistré", "Saved"], save_fail: ["Échec de l'enregistrement local", "Local save failed"],
     finish: ["Terminer l'entretien", "Finish the interview"], reopen: ["Modifier", "Edit"], report: ["Compte rendu", "Report"],
@@ -80,11 +86,13 @@
   const hasV = v => Array.isArray(v) ? v.length > 0 : (v !== undefined && v !== null && v !== "");
   const isAnswered = (iv, q) => { const a = iv.answers[q.id]; return !!a && (hasV(a.v) || !!(a.n && a.n.trim())); };
   const progress = iv => { const qs = profQs(PROF[iv.profile]); return [qs.filter(q => isAnswered(iv, q)).length, qs.length]; };
-  const valLabel = (q, v) => {
+  const OTHER = 99;
+  const valLabel = (q, v, o) => {
     if (!hasV(v)) return "";
+    const lab = i => i === OTHER ? t("other") + (o ? " : " + o : "") : (L(q.o[i]) || "");
     switch (q.type) {
-      case "single": return L(q.o[v]) || "";
-      case "multi": return v.map(i => L(q.o[i])).join(" · ");
+      case "single": return lab(v);
+      case "multi": return v.map(lab).join(" · ");
       case "yn": return v === "y" ? t("yes") : v === "n" ? t("no") : t("unk");
       case "scale": return v + " / 5";
       case "num": return fmt(v) + (q.unit ? " " + q.unit : "");
@@ -145,10 +153,12 @@
   /* ---------- question rendering ---------- */
   const chip = (v, label, on) => `<button type="button" class="chip${on ? " on" : ""}" data-act="opt" data-v="${v}" aria-pressed="${on ? "true" : "false"}">${label}</button>`;
   function inputHTML(q, a) {
-    const v = a.v;
+    const v = a.v, has = i => q.type === "multi" ? Array.isArray(v) && v.includes(i) : v === i;
+    const other = q.noOther ? "" : chip(OTHER, t("other") + "…", has(OTHER));
+    const otherIn = q.noOther ? "" : `<input type="text" class="other" data-other placeholder="${t("other_ph")}" aria-label="${t("other")}" value="${esc(a.o)}"${has(OTHER) ? "" : " hidden"}>`;
     switch (q.type) {
-      case "single": return `<div class="chips">${q.o.map((o, i) => chip(i, L(o), v === i)).join("")}</div>`;
-      case "multi": return `<div class="chips multi">${q.o.map((o, i) => chip(i, L(o), Array.isArray(v) && v.includes(i))).join("")}</div>`;
+      case "single": return `<div class="chips">${q.o.map((o, i) => chip(i, L(o), has(i))).join("")}${other}</div>${otherIn}`;
+      case "multi": return `<div class="chips multi">${q.o.map((o, i) => chip(i, L(o), has(i))).join("")}${other}</div>${otherIn}`;
       case "yn": return `<div class="chips">${chip("y", t("yes"), v === "y")}${chip("n", t("no"), v === "n")}${chip("u", t("unk"), v === "u")}</div>`;
       case "scale": return `<div class="chips scale">${[1, 2, 3, 4, 5].map(i => chip(i, i, v === i)).join("")}</div>`;
       case "num": return `<div class="num"><input type="number" inputmode="numeric" min="0" step="1000" data-val value="${hasV(v) ? esc(v) : ""}" aria-label="${esc(L(q.t))}"> <span>${q.unit || ""}</span></div>`;
@@ -156,7 +166,7 @@
     }
   }
   function qHTML(q, a, n, readonly) {
-    const opts = readonly && q.o ? `<p class="q-opts">${q.o.map(o => `<span>${L(o)}</span>`).join("")}</p>` : "";
+    const opts = readonly && q.o ? `<p class="q-opts">${q.o.map(o => `<span>${L(o)}</span>`).join("")}${q.noOther ? "" : `<span>${t("other")}…</span>`}</p>` : "";
     return `<div class="q" data-q="${q.id}">
       <div class="q-head"><span class="q-num">${n}</span><div>
         <p class="q-text">${L(q.t)}</p>
@@ -184,7 +194,7 @@
   }
 
   /* ---------- interview ---------- */
-  const META = [["name", "text"], ["role", "text"], ["company", "text"], ["size", "number"], ["wilaya", "text"], ["date", "date"], ["contact", "text"]];
+  const META = [["name", "text"], ["role", "text"], ["company", "text"], ["sector", "text"], ["size", "number"], ["wilaya", "text"], ["date", "date"], ["contact", "text"]];
   function vInterview(id) {
     const iv = DB.find(x => x.id === id); if (!iv) return `<p class="empty">${t("notfound")}</p>`;
     cur = iv; const p = PROF[iv.profile];
@@ -232,7 +242,7 @@
     const secs = p.sections.filter(s => s.qs).map(s => {
       const items = s.qs.map(qid => Q[qid]).filter(q => isAnswered(iv, q)).map(q => {
         const a = iv.answers[q.id];
-        return `<div class="ra"><p class="q-text">${L(q.t)}</p>${hasV(a.v) ? `<p class="val">${esc(valLabel(q, a.v))}</p>` : ""}${a.n ? `<p class="note">${esc(a.n)}</p>` : ""}</div>`;
+        return `<div class="ra"><p class="q-text">${L(q.t)}</p>${hasV(a.v) ? `<p class="val">${esc(valLabel(q, a.v, a.o))}</p>` : ""}${a.n ? `<p class="note">${esc(a.n)}</p>` : ""}</div>`;
       }).join("");
       return items ? `<section class="sec card"><h2>${L(s.t)}</h2>${items}</section>` : "";
     }).join("");
@@ -265,7 +275,7 @@
     const head = ["id", "profile", "status", "minutes"].concat(META.map(m => m[0]), qs.flatMap(q => q.type === "text" ? [q.id] : [q.id, q.id + "_notes"]));
     const lines = DB.map(iv => [iv.id, L(PROF[iv.profile].n), iv.status, Math.round((iv.elapsed || 0) / 60)]
       .concat(META.map(([k]) => k === "mode" ? L(UI.mode_o[iv.meta[k]] || "") : iv.meta[k]),
-        qs.flatMap(q => { const a = iv.answers[q.id] || {}; return q.type === "text" ? [a.v] : [valLabel(q, a.v), a.n]; })).map(cell).join(";"));
+        qs.flatMap(q => { const a = iv.answers[q.id] || {}; return q.type === "text" ? [a.v] : [valLabel(q, a.v, a.o), a.n]; })).map(cell).join(";"));
     const labels = ["", "", "", ""].concat(META.map(m => t("m_" + m[0])), qs.flatMap(q => q.type === "text" ? [L(q.t)] : [L(q.t), ""])).map(cell).join(";");
     download("soc-interviews-" + today() + ".csv", "﻿" + [head.map(cell).join(";"), labels].concat(lines).join("\r\n"), "text/csv;charset=utf-8");
   }
@@ -313,19 +323,20 @@
       let body;
       if (q.type === "num") body = `<p class="val">${t("median")} ${fmt(median(v))} ${q.unit || ""} <span class="muted">(min ${fmt(Math.min.apply(null, v))} · max ${fmt(Math.max.apply(null, v))})</span></p>`;
       else {
-        const opts = q.type === "yn" ? [["y", t("yes")], ["n", t("no")], ["u", t("unk")]] : q.type === "scale" ? [1, 2, 3, 4, 5].map(i => [i, String(i)]) : q.o.map((o, i) => [i, L(o)]);
+        const opts = q.type === "yn" ? [["y", t("yes")], ["n", t("no")], ["u", t("unk")]] : q.type === "scale" ? [1, 2, 3, 4, 5].map(i => [i, String(i)]) : q.o.map((o, i) => [i, L(o)]).concat(q.noOther ? [] : [[OTHER, t("other")]]);
         body = opts.map(([k, label]) => {
           const c = v.filter(x => q.type === "multi" ? x.includes(k) : x === k).length;
           return `<div class="bar-row"><span class="bl">${label}</span><span class="bt"><i style="width:${100 * c / v.length}%"></i></span><span class="bc">${c}</span></div>`;
         }).join("");
       }
-      return `<div class="card dist"><h3>${L(q.t)}</h3><p class="muted">${v.length} ${t("resp")}</p>${body}</div>`;
+      const others = set.map(i => i.answers[q.id]).filter(x => x && x.o && (q.type === "multi" ? (x.v || []).includes(OTHER) : x.v === OTHER)).map(x => `<li>${esc(x.o)}</li>`).join("");
+      return `<div class="card dist"><h3>${L(q.t)}</h3><p class="muted">${v.length} ${t("resp")}</p>${body}${others ? `<ul class="others">${others}</ul>` : ""}</div>`;
     }).join("");
 
     const bmc = BMC.map(([tag, fr, en]) => {
       const items = set.flatMap(iv => Object.values(Q).filter(q => q.bmc === tag).map(q => {
         const a = iv.answers[q.id]; if (!a) return "";
-        const txt = q.type === "text" ? a.v : a.n; if (!txt || !String(txt).trim()) return "";
+        const txt = q.type === "text" ? a.v : [a.o, a.n].filter(x => x && String(x).trim()).join(" — "); if (!txt || !String(txt).trim()) return "";
         return `<li><span class="muted">${L(q.t)}</span><br>« ${esc(txt)} » <span class="src">— ${esc(who(iv))}</span></li>`;
       })).filter(Boolean);
       return `<details class="card bmc"${items.length ? " open" : ""}><summary>${L([fr, en])} <span class="count">${items.length}</span></summary>${items.length ? `<ul>${items.join("")}</ul>` : `<p class="muted">${t("empty")}</p>`}</details>`;
@@ -395,6 +406,8 @@
       if (q.type === "multi") { const arr = Array.isArray(a.v) ? a.v : []; a.v = arr.includes(v) ? arr.filter(x => x !== v) : arr.concat(v).sort((x, y) => x - y); }
       else a.v = a.v === v ? undefined : v;
       $$(".chip", box).forEach(c => { const cv = q.type === "yn" ? c.dataset.v : Number(c.dataset.v); const on = q.type === "multi" ? a.v.includes(cv) : a.v === cv; c.classList.toggle("on", on); c.setAttribute("aria-pressed", on); });
+      const oi = $("[data-other]", box);
+      if (oi) { const on = q.type === "multi" ? a.v.includes(OTHER) : a.v === OTHER; oi.hidden = !on; if (on && v === OTHER) oi.focus(); }
       touch(); updateProgress();
     },
     scroll(b) { const el = document.getElementById(b.dataset.id); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); },
@@ -420,7 +433,8 @@
     if (el.dataset.meta) { cur.meta[el.dataset.meta] = el.value; const w = $("#who"); if (w) w.textContent = who(cur); touch(); return; }
     const box = el.closest(".q"); if (!box) return;
     const q = Q[box.dataset.q], a = cur.answers[q.id] || (cur.answers[q.id] = {});
-    if (el.dataset.note !== undefined) a.n = el.value;
+    if (el.dataset.other !== undefined) a.o = el.value;
+    else if (el.dataset.note !== undefined) a.n = el.value;
     else if (el.dataset.val !== undefined) a.v = q.type === "num" ? (el.value === "" ? undefined : Number(el.value)) : el.value;
     if (el.tagName === "TEXTAREA") { el.style.height = "auto"; el.style.height = el.scrollHeight + 2 + "px"; }
     touch(); updateProgress();
