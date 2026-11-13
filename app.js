@@ -14,12 +14,32 @@
   };
   let lang = store.get(LSL) === "en" ? "en" : "fr";
   let DB = (() => { try { return JSON.parse(store.get(LS)) || []; } catch (e) { return []; } })();
-  DB.forEach(iv => Object.keys(iv.answers || {}).forEach(id => {
+  const normalize = () => DB.forEach(iv => Object.keys(iv.answers || {}).forEach(id => {
     const q = Q[id], a = iv.answers[id]; if (!q || !a || a.v === undefined || a.v === null) return;
     const ok = q.type === "multi" ? Array.isArray(a.v) : (q.type === "single" || q.type === "scale" || q.type === "num") ? typeof a.v === "number" : q.type === "yn" ? ["y", "n", "u"].includes(a.v) : true;
     if (!ok) { a.n = [String(a.v), a.n].filter(Boolean).join("\n"); delete a.v; }
   }));
   const persist = () => store.set(LS, JSON.stringify(DB));
+
+  /* ---------- team edits to the guides (shared through the database like interviews) ---------- */
+  const LSC = "socdz.custom.v1", BASE_Q = Object.assign({}, Q), BASE_SECS = Object.fromEntries(PROFILES.map(p => [p.id, p.sections.map(s => s.qs.slice())]));
+  let CUSTOM = (() => { try { return JSON.parse(store.get(LSC)) || {}; } catch (e) { return {}; } })();
+  function applyCustom() {
+    CUSTOM.q = CUSTOM.q || {}; CUSTOM.guides = CUSTOM.guides || {};
+    Object.keys(Q).forEach(id => { if (BASE_Q[id]) Q[id] = BASE_Q[id]; else delete Q[id]; });
+    Object.keys(CUSTOM.q).forEach(id => {
+      const c = CUSTOM.q[id], t0 = (c.t && c.t[0]) || "?";
+      const q = Object.assign({ bmc: c.bmc || "seg" }, BASE_Q[id], { id, type: c.type, t: [t0, (c.t && c.t[1]) || t0], h: c.h || undefined, noOther: c.noOther ? 1 : undefined });
+      if (q.type === "single" || q.type === "multi") q.o = Array.isArray(c.o) ? c.o : []; else delete q.o;
+      Q[id] = q;
+    });
+    PROFILES.forEach(p => {
+      const g = CUSTOM.guides[p.id];
+      p.sections.forEach((s, i) => { s.qs = (g && Array.isArray(g[i]) ? g[i] : BASE_SECS[p.id][i]).filter(id => Q[id]); });
+    });
+    USED = Object.values(Q).filter(q => PROFILES.some(p => p.sections.some(s => s.qs.includes(q.id))));
+    normalize();
+  }
   const live = () => DB.filter(x => !x.deleted); // deleted records are kept as markers so the deletion syncs
 
   /* ---------- shared database (Supabase), optional: see config.js ---------- */
@@ -39,15 +59,21 @@
       const rows = await api("/rest/v1/interviews?select=id,data,updated") || [];
       const remote = new Map(rows.map(r => [r.id, r])); let changed = false;
       rows.forEach(r => {
+        if (r.id === "_config") {
+          if (r.data && r.data.custom && r.updated > (CUSTOM.updated || 0)) { CUSTOM = r.data.custom; CUSTOM.updated = r.updated; store.set(LSC, JSON.stringify(CUSTOM)); applyCustom(); changed = true; }
+          return;
+        }
         if (!r.data || !PROF[r.data.profile] || typeof r.data.answers !== "object") return;
         const i = DB.findIndex(x => x.id === r.id);
         if (i < 0) { DB.push(r.data); changed = true; }
         else if (r.updated > (DB[i].updated || 0) && !(cur && cur.id === r.id)) { DB[i] = r.data; changed = true; }
       });
       const out = DB.filter(x => !remote.has(x.id) || (x.updated || 0) > remote.get(x.id).updated).map(x => ({ id: x.id, data: x, updated: x.updated || 0 }));
+      const rc = remote.get("_config");
+      if (CUSTOM.updated && (!rc || CUSTOM.updated > rc.updated)) out.push({ id: "_config", data: { profile: "_config", custom: CUSTOM }, updated: CUSTOM.updated });
       if (out.length) await api("/rest/v1/interviews?on_conflict=id", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify(out) });
       dirty = false; syncState = "ok";
-      if (changed) { persist(); if (!cur) render(); }
+      if (changed) { persist(); if (!cur && !editP) render(); }
     } catch (e) { syncState = e.status ? "refused" : "err"; }
     syncing = false; drawSync();
   }
@@ -85,6 +111,18 @@
     sy_err: ["Pas de connexion : les fiches restent sur cet appareil et partiront dès que possible.", "No connection: records stay on this device and will be sent as soon as possible."],
     sy_refused: ["La base a refusé l'accès : vérifiez la configuration Supabase.", "The database refused access: check the Supabase setup."],
     sy_shared: ["Les fiches sont partagées automatiquement avec l'équipe ; hors ligne, elles restent sur l'appareil puis se synchronisent.", "Records are shared with the team automatically; offline, they stay on the device and sync later."],
+    ed_btn: ["Modifier les questions", "Edit questions"], ed_title: ["Modifier le guide", "Edit the guide"], ed_done: ["Terminé", "Done"],
+    ed_intro: ["Les changements sont enregistrés automatiquement et partagés avec toute l'équipe.", "Changes are saved automatically and shared with the whole team."],
+    ed_fr: ["Question (français)", "Question (French)"], ed_en: ["Question (anglais, facultatif)", "Question (English, optional)"], ed_type: ["Type de réponse", "Answer type"],
+    ed_opts: ["Choix proposés, un par ligne (ajoutez « | english » pour la traduction)", "Choices, one per line (add « | english » for the translation)"],
+    ed_other: ["Proposer « Autre… » avec un champ libre", "Offer « Other… » with a free-text field"], ed_hint: ["Aide pour l'intervieweur (facultatif)", "Tip for the interviewer (optional)"],
+    ed_up: ["Monter", "Move up"], ed_down: ["Descendre", "Move down"], ed_del: ["Retirer du guide", "Remove from guide"], ed_restore: ["Rétablir l'original", "Restore the original"],
+    ed_add: ["Ajouter", "Add"], ed_new: ["+ Nouvelle question", "+ New question"], ed_reserve: ["Questions existantes", "Existing questions"],
+    ed_reset: ["Réinitialiser ce guide", "Reset this guide"], ed_reset_c: ["Revenir à la liste de questions d'origine pour ce guide ?", "Go back to the original question list for this guide?"],
+    ed_shared: ["Cette question sert dans {n} guides : la modification s'applique partout.", "This question is used in {n} guides: the change applies everywhere."],
+    ed_ans: ["Des réponses existent déjà ou une hypothèse en dépend : ajoutez des choix à la fin, sans supprimer ni réordonner les choix existants.", "Answers already exist or a hypothesis depends on it: add choices at the end, without deleting or reordering existing ones."],
+    ed_newq: ["Nouvelle question", "New question"],
+    ty_single: ["Un seul choix", "Single choice"], ty_multi: ["Plusieurs choix", "Multiple choice"], ty_yn: ["Oui / Non", "Yes / No"], ty_scale: ["Note de 1 à 5", "Scale 1 to 5"], ty_text: ["Texte libre", "Free text"], ty_num: ["Nombre", "Number"],
     other: ["Autre", "Other"], other_ph: ["Précisez…", "Specify…"],
     yes: ["Oui", "Yes"], no: ["Non", "No"], unk: ["Ne sait pas", "Doesn't know"],
     saved: ["Enregistré", "Saved"], save_fail: ["Échec de l'enregistrement local", "Local save failed"],
@@ -121,7 +159,8 @@
   /* ---------- helpers on interviews ---------- */
   const profQs = p => p.sections.flatMap(s => s.qs || []).map(id => Q[id]);
   const askCount = p => p.sections.filter(s => !s.team).flatMap(s => s.qs || []).length;
-  const USED = Object.values(Q).filter(q => PROFILES.some(p => profQs(p).includes(q)));
+  let USED = [];
+  applyCustom();
   const hasV = v => Array.isArray(v) ? v.length > 0 : (v !== undefined && v !== null && v !== "");
   const isAnswered = (iv, q) => { const a = iv.answers[q.id]; return !!a && (hasV(a.v) || !!(a.n && a.n.trim())); };
   const progress = iv => { const qs = profQs(PROF[iv.profile]); return [qs.filter(q => isAnswered(iv, q)).length, qs.length]; };
@@ -163,11 +202,11 @@
   }
 
   function render() {
-    clearInterval(tick); tick = null; flush(); cur = null;
+    clearInterval(tick); tick = null; flush(); cur = null; flushCustom(); editP = null;
     const [r, arg] = location.hash.replace(/^#\/?/, "").split("/");
     const route = r || "home";
-    shell(route === "guide" ? "home" : (route === "interview" || route === "report") ? "interviews" : route);
-    const views = { home: vHome, guide: vGuide, interview: vInterview, report: vReport, interviews: vList, insights: vInsights, pricing: vPricing };
+    shell(route === "guide" || route === "edit" ? "home" : (route === "interview" || route === "report") ? "interviews" : route);
+    const views = { edit: vEdit, home: vHome, guide: vGuide, interview: vInterview, report: vReport, interviews: vList, insights: vInsights, pricing: vPricing };
     app.innerHTML = (views[route] || (() => `<p class="empty">${t("notfound")}</p>`))(arg);
     if (route === "pricing") drawQuote();
     if (route === "interview" && cur) { updateProgress(); drawTimer(); }
@@ -182,7 +221,7 @@
         <p class="muted">${L(p.who)}</p>
         <p><b>${t("goal")} :</b> ${L(p.goal)}</p>
         <p class="tags"><span>⏱ ${p.dur} ${t("min")}</span><span>${askCount(p)} ${t("questions")}</span>${n ? `<span class="ok">${n} ${t("done_n")}</span>` : ""}</p>
-        <div class="row"><button class="btn" data-act="start" data-id="${p.id}">${t("start")}</button><a class="btn ghost" href="#/guide/${p.id}">${t("preview")}</a></div>
+        <div class="row"><button class="btn" data-act="start" data-id="${p.id}">${t("start")}</button><a class="btn ghost" href="#/guide/${p.id}">${t("preview")}</a><a class="btn ghost" href="#/edit/${p.id}" aria-label="${t("ed_btn")}" title="${t("ed_btn")}">✎</a></div>
       </article>`;
     }).join("");
     return `<header class="hero"><h1>${t("hero_t")}</h1><p>${t("hero_s")}</p></header>
@@ -227,9 +266,49 @@
     const p = PROF[pid]; if (!p) return `<p class="empty">${t("notfound")}</p>`;
     return `<header class="page-h"><div><a class="back noprint" href="#/">← ${t("back")}</a><h1>${p.icon} ${L(p.n)}</h1>
         <p class="muted">${L(p.who)}</p><p><b>${t("goal")} :</b> ${L(p.goal)} · ⏱ ${p.dur} ${t("min")}</p></div>
-        <div class="row noprint"><button class="btn" data-act="start" data-id="${p.id}">${t("start")}</button><button class="btn ghost" data-act="print">${t("print")}</button></div></header>
+        <div class="row noprint"><button class="btn" data-act="start" data-id="${p.id}">${t("start")}</button><a class="btn ghost" href="#/edit/${p.id}">✎ ${t("ed_btn")}</a><button class="btn ghost" data-act="print">${t("print")}</button></div></header>
       ${consentHTML(p)}${sectionsHTML(p, null)}`;
   }
+
+  /* ---------- guide editor ---------- */
+  let editP = null, openE = null, custT = null;
+  const TYPES = ["single", "multi", "yn", "scale", "text", "num"];
+  const pair = s => { const p = String(s || "").split("|").map(x => x.trim()); return p[0] ? [p[0], p[1] || p[0]] : null; };
+  const unpair = x => !x ? "" : x[0] === x[1] ? x[0] : x[0] + " | " + x[1];
+  function saveCustom() { clearTimeout(custT); custT = null; CUSTOM.updated = Date.now(); store.set(LSC, JSON.stringify(CUSTOM)); applyCustom(); dirty = true; queueSync(); }
+  function flushCustom() { if (custT) saveCustom(); }
+  const guideOf = p => CUSTOM.guides[p.id] || (CUSTOM.guides[p.id] = p.sections.map(s => s.qs.slice()));
+  function qEdit(id) {
+    if (!CUSTOM.q[id]) { const q = Q[id]; CUSTOM.q[id] = { type: q.type, t: q.t.slice(), h: q.h ? q.h.slice() : null, o: q.o ? q.o.map(x => x.slice()) : null, noOther: q.noOther ? 1 : 0 }; }
+    return CUSTOM.q[id];
+  }
+  function vEdit(pid) {
+    const p = PROF[pid]; if (!p) return `<p class="empty">${t("notfound")}</p>`;
+    editP = pid; let n = 0;
+    const inGuide = profQs(p), reserve = Object.values(Q).filter(q => !inGuide.includes(q));
+    const secs = p.sections.map((s, si) => `<section class="sec card"><h2>${L(s.t)}</h2>${s.qs.map((id, qi) => {
+      const q = Q[id], nUse = PROFILES.filter(x => profQs(x).includes(q)).length, locked = q.hyp || q.hyps || DB.some(iv => iv.answers && iv.answers[id] && hasV(iv.answers[id].v));
+      const choice = q.type === "single" || q.type === "multi";
+      return `<details class="qe" data-e="${id}" data-s="${si}" data-i="${qi}"${openE === id ? " open" : ""}>
+        <summary><span class="q-num">${++n}</span><span class="qe-t">${esc(L(q.t))}</span><span class="badge">${t("ty_" + q.type)}</span></summary>
+        <div class="qe-body">
+          ${nUse > 1 ? `<p class="callout">${t("ed_shared").replace("{n}", nUse)}</p>` : ""}${locked && choice ? `<p class="callout">${t("ed_ans")}</p>` : ""}
+          <label>${t("ed_fr")}<textarea data-f="t0" rows="2">${esc(q.t[0])}</textarea></label>
+          <label>${t("ed_en")}<textarea data-f="t1" rows="2">${esc(q.t[1] === q.t[0] ? "" : q.t[1])}</textarea></label>
+          <label>${t("ed_type")}<select data-f="type">${TYPES.map(ty => `<option value="${ty}"${q.type === ty ? " selected" : ""}>${t("ty_" + ty)}</option>`).join("")}</select></label>
+          ${choice ? `<label>${t("ed_opts")}<textarea data-f="o" rows="${Math.max(4, q.o.length + 1)}">${esc(q.o.map(unpair).join("\n"))}</textarea></label>
+          <label class="check"><input type="checkbox" data-f="other"${q.noOther ? "" : " checked"}> <span>${t("ed_other")}</span></label>` : ""}
+          <label>${t("ed_hint")}<input type="text" data-f="h" value="${esc(unpair(q.h))}"></label>
+          <div class="row"><button class="btn ghost sm" data-act="eMove" data-d="-1">↑ ${t("ed_up")}</button><button class="btn ghost sm" data-act="eMove" data-d="1">↓ ${t("ed_down")}</button>
+            <button class="btn ghost sm danger" data-act="eDel">${t("ed_del")}</button>${BASE_Q[id] && CUSTOM.q[id] ? `<button class="btn ghost sm" data-act="eRestore">${t("ed_restore")}</button>` : ""}</div>
+        </div></details>`;
+    }).join("")}
+      <div class="row add"><select data-add="${si}" aria-label="${t("ed_add")}"><option value="">${t("ed_new")}</option><optgroup label="${t("ed_reserve")}">${reserve.map(q => `<option value="${q.id}">${esc(L(q.t))}</option>`).join("")}</optgroup></select>
+        <button class="btn sm" data-act="eAdd" data-s="${si}">${t("ed_add")}</button></div></section>`).join("");
+    return `<header class="page-h"><div><a class="back" href="#/guide/${p.id}">← ${t("back")}</a><h1>✎ ${p.icon} ${L(p.n)}</h1><p class="muted">${t("ed_intro")}</p></div>
+      <div class="row"><a class="btn" href="#/guide/${p.id}">${t("ed_done")}</a><button class="btn ghost danger" data-act="eReset">${t("ed_reset")}</button></div></header>${secs}`;
+  }
+  const redrawEdit = () => { const y = window.scrollY, p = editP; app.innerHTML = vEdit(p); window.scrollTo(0, y); };
 
   /* ---------- interview ---------- */
   const META = [["name", "text"], ["role", "text"], ["company", "text"], ["sector", "text"], ["size", "number"], ["wilaya", "text"], ["date", "date"], ["contact", "text"]];
@@ -460,6 +539,19 @@
     del(b) { if (!confirm(t("del_confirm"))) return; const iv = DB.find(x => x.id === b.dataset.id); if (iv) { iv.deleted = true; iv.updated = Date.now(); } dirty = true; render(); },
     expJson() { download("soc-interviews-" + today() + ".json", JSON.stringify(live(), null, 2), "application/json"); },
     syncNow() { sync(); },
+    eAdd(b) {
+      const p = PROF[editP], si = Number(b.dataset.s), g = guideOf(p); let id = $(`[data-add="${si}"]`).value;
+      if (!id) { id = "cq" + Date.now().toString(36); CUSTOM.q[id] = { type: "single", t: [L(UI.ed_newq), L(UI.ed_newq)], h: null, o: [["Option 1", "Option 1"], ["Option 2", "Option 2"]], noOther: 0, bmc: "seg" }; }
+      g[si].push(id); openE = id; saveCustom(); redrawEdit();
+    },
+    eMove(b) {
+      const e = b.closest(".qe"), g = guideOf(PROF[editP])[Number(e.dataset.s)], i = Number(e.dataset.i), j = i + Number(b.dataset.d);
+      if (j < 0 || j >= g.length) return;
+      const x = g[i]; g[i] = g[j]; g[j] = x; openE = e.dataset.e; saveCustom(); redrawEdit();
+    },
+    eDel(b) { const e = b.closest(".qe"); guideOf(PROF[editP])[Number(e.dataset.s)].splice(Number(e.dataset.i), 1); openE = null; saveCustom(); redrawEdit(); },
+    eRestore(b) { const e = b.closest(".qe"); delete CUSTOM.q[e.dataset.e]; openE = e.dataset.e; saveCustom(); redrawEdit(); },
+    eReset() { if (!confirm(t("ed_reset_c"))) return; delete CUSTOM.guides[editP]; openE = null; saveCustom(); redrawEdit(); },
     expCsv: exportCsv
   };
   document.addEventListener("click", e => { const b = e.target.closest("[data-act]"); if (b && acts[b.dataset.act]) acts[b.dataset.act](b); });
@@ -468,6 +560,17 @@
     if (el.dataset.p !== undefined) {
       ps[el.dataset.p] = el.type === "checkbox" ? el.checked : el.dataset.int !== undefined ? Math.max(0, parseInt(el.value, 10) || 0) : el.value;
       drawQuote(); return;
+    }
+    const qe = el.closest(".qe");
+    if (qe && el.dataset.f) {
+      const id = qe.dataset.e, c = qEdit(id), f = el.dataset.f; openE = id;
+      if (f === "t0") { c.t[0] = el.value; $(".qe-t", qe).textContent = el.value; }
+      else if (f === "t1") c.t[1] = el.value.trim();
+      else if (f === "h") c.h = pair(el.value);
+      else if (f === "o") c.o = el.value.split("\n").map(pair).filter(Boolean);
+      else if (f === "other") c.noOther = el.checked ? 0 : 1;
+      else if (f === "type") { c.type = el.value; if ((c.type === "single" || c.type === "multi") && !Array.isArray(c.o)) c.o = [["Option 1", "Option 1"], ["Option 2", "Option 2"]]; saveCustom(); redrawEdit(); return; }
+      clearTimeout(custT); custT = setTimeout(saveCustom, 600); return;
     }
     if (!cur) return;
     if (el.dataset.meta) { cur.meta[el.dataset.meta] = el.value; const w = $("#who"); if (w) w.textContent = who(cur); touch(); return; }
@@ -486,7 +589,7 @@
   window.addEventListener("online", sync);
   setInterval(() => { if (!document.hidden) sync(); }, 60000);
   window.addEventListener("hashchange", () => { render(); window.scrollTo(0, 0); });
-  window.addEventListener("beforeunload", flush);
+  window.addEventListener("beforeunload", () => { flush(); flushCustom(); });
   document.addEventListener("visibilitychange", () => { if (document.hidden) flush(); });
   render();
   sync();

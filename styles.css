@@ -106,6 +106,17 @@ textarea { resize: vertical; min-height: 42px; }
 .others { margin: 4px 0 0; padding-left: 18px; font-size: .85rem; color: var(--muted); overflow-wrap: anywhere; }
 .num { display: flex; align-items: center; gap: 8px; max-width: 260px; }
 
+/* guide editor */
+.qe { border-bottom: 1px solid var(--line); padding: 10px 0; }
+.qe > summary { display: flex; gap: 10px; align-items: center; font-weight: 600; }
+.qe[open] > summary { margin-bottom: 12px; }
+.qe-t { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.qe-body { display: grid; gap: 12px; padding-left: 36px; }
+.qe-body select { max-width: 260px; }
+.row.add { padding-top: 12px; }
+.row.add select { flex: 1 1 200px; min-width: 0; width: auto; }
+@media (max-width: 640px) { .qe-body { padding-left: 0; } }
+
 /* report */
 .metalist { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin: 0; }
 .metalist dt { font-size: .8rem; color: var(--muted); }

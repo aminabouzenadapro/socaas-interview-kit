@@ -37,4 +37,10 @@ To use another Supabase project: run `supabase-setup.sql` in its SQL editor, the
 
 ## Editing the questions
 
+In the site: open a guide and tap **✎ Modifier les questions**. You can reword a question, change its answer type and choices, reorder, remove, add a new question or pick an existing one. Changes save automatically and are shared with the team through the database.
+
+Questions store choice answers by position, so once a question has answers, add new choices at the end instead of deleting or reordering.
+
+In the code:
+
 Everything is in `data.js`: questions, profiles, hypotheses and the pricing table. Each text is `[French, English]`. The guides are kept short on purpose; `data.js` also holds reserve questions that you can add to a profile by putting their id in its list.
